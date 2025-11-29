@@ -1,6 +1,6 @@
 <!-- 可折叠的树形导航 -->
 <div class="explorer-nav">
-  📁 知识库导航
+  📁 Wiki导航
 
   {% assign all_wiki_pages = site.pages | where_exp: "page", "page.path contains 'wiki/'" | sort: "path" %}
   {% assign folders = "" | split: "" %}
