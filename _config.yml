@@ -5,9 +5,9 @@ baseurl: ""
 
 # 下面是原有的参数。
 # (string) Title of your wiki
-title: <p style="text-align: center;">极乐嘉宾</p>
+title: "<p style='text-align: center;'>极乐嘉宾</p>"
 # (string) Description of your wiki
-description: <p style="text-align: center;">普愿沉溺诸众生<br>速往无量光佛刹</p>
+description: "<p style='text-align: center;'>普愿沉溺诸众生<br>速往无量光佛刹</p>"
 # (boolean) disable edit functionalities (edit/delete/add pages)
 disable_edit: true
 # (boolean) Enable/disable wiki page list in sidebar
