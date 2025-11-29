@@ -21,9 +21,9 @@
     {% for folder in folders %}
     {% assign folder_pages = all_wiki_pages | where_exp: "page", "page.path contains folder" %}
 
-    <!-- 智能排序：目录在前，其他按标题排序 -->
+    <!-- 修正：使用正确的语法进行过滤 -->
     {% assign toc_pages = folder_pages | where_exp: "page", "page.path contains '_目录'" %}
-    {% assign other_pages = folder_pages | where_exp: "page", "page.path contains '_目录' == false" | sort: "title" %}
+    {% assign other_pages = folder_pages | where_exp: "page", "page.path contains '_目录' != true" | sort: "title" %}
     {% assign sorted_pages = toc_pages | concat: other_pages %}
 
     <li class="explorer-folder">
