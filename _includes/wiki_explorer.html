@@ -21,10 +21,21 @@
     {% for folder in folders %}
     {% assign folder_pages = all_wiki_pages | where_exp: "page", "page.path contains folder" %}
 
-    <!-- 修正：使用正确的语法进行过滤 -->
-    {% assign toc_pages = folder_pages | where_exp: "page", "page.path contains '_目录'" %}
-    {% assign other_pages = folder_pages | where_exp: "page", "page.path contains '_目录' != true" | sort: "title" %}
-    {% assign sorted_pages = toc_pages | concat: other_pages %}
+    <!-- 手动分离目录文件和其他文件 -->
+    {% assign toc_pages = "" | split: "" %}
+    {% assign other_pages = "" | split: "" %}
+
+    {% for doc in folder_pages %}
+    {% if doc.path contains '_目录' %}
+    {% assign toc_pages = toc_pages | push: doc %}
+    {% else %}
+    {% assign other_pages = other_pages | push: doc %}
+    {% endif %}
+    {% endfor %}
+
+    <!-- 排序其他页面 -->
+    {% assign sorted_other_pages = other_pages | sort: "title" %}
+    {% assign sorted_pages = toc_pages | concat: sorted_other_pages %}
 
     <li class="explorer-folder">
       <details {% if page.path contains folder %}open{% endif %}>
@@ -46,7 +57,6 @@
               {% if doc.path contains '_目录' %}
               目录
               {% else %}
-              {% comment %} 从标题中提取显示名称 {% endcomment %}
               {% assign title_parts = doc.title | split: ")" %}
               {% if title_parts.size > 1 %}
               {{ title_parts[1] }}
@@ -93,7 +103,6 @@
     margin: 0.3rem 0;
   }
 
-  /* 文件夹样式 */
   .explorer-folder details {
     margin: 0.2rem 0;
   }
@@ -140,7 +149,6 @@
     margin-left: auto;
   }
 
-  /* 文件列表样式 */
   .folder-contents {
     list-style: none;
     padding-left: 1.5rem;
@@ -180,7 +188,6 @@
     flex-shrink: 0;
   }
 
-  /* 目录特殊样式 */
   .explorer-file a[href*="_目录"] {
     font-weight: 600;
     background: #f0f0f0;
@@ -190,7 +197,6 @@
     background: #0366d6;
   }
 
-  /* 滚动条样式 */
   .explorer-tree::-webkit-scrollbar {
     width: 6px;
   }
