@@ -5,7 +5,7 @@ baseurl: ""
 
 # 下面是原有的参数。
 # (string) Title of your wiki
-title: "<p style='text-align: center;'>极乐嘉宾</p>"
+title: "极乐嘉宾"
 # (string) Description of your wiki
 description: "<p style='text-align: center;'>普愿沉溺诸众生<br>速往无量光佛刹</p>"
 # (boolean) disable edit functionalities (edit/delete/add pages)
