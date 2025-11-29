@@ -1,0 +1,187 @@
+<!-- 可折叠的树形导航 -->
+<div class="explorer-nav">
+  <h3>📁 知识库导航</h3>
+
+  {% assign all_wiki_pages = site.pages | where_exp: "page", "page.path contains 'wiki/'" | sort: "path" %}
+  {% assign folders = "" | split: "" %}
+
+  <!-- 收集所有文件夹 -->
+  {% for doc in all_wiki_pages %}
+  {% assign path_parts = doc.path | split: "/" %}
+  {% if path_parts.size > 2 %}
+  {% assign folder = path_parts[1] %}
+  {% unless folders contains folder %}
+  {% assign folders = folders | push: folder %}
+  {% endunless %}
+  {% endif %}
+  {% endfor %}
+
+  <!-- 构建树形结构 -->
+  <ul class="explorer-tree">
+    {% for folder in folders %}
+    {% assign folder_pages = all_wiki_pages | where_exp: "page", "page.path contains folder" | sort: "title" %}
+
+    <li class="explorer-folder">
+      <!-- 这就是可折叠的部分 -->
+      <details {% if page.path contains folder %}open{% endif %}>
+        <summary>
+          <span class="folder-icon">📁</span>
+          {{ folder }}
+          <span class="item-count">({{ folder_pages.size }})</span>
+        </summary>
+
+        <ul class="folder-contents">
+          {% for doc in folder_pages %}
+          <li class="explorer-file {% if doc.url == page.url %}active{% endif %}">
+            <a href="{{ doc.url }}">
+              <span class="file-icon">
+                {% if doc.path contains '_目录' %}📋
+                {% else %}📄
+                {% endif %}
+              </span>
+              {{ doc.title }}
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </details>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+
+<style>
+  .explorer-nav {
+    margin-bottom: 2rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: white;
+  }
+
+  .explorer-nav h3 {
+    margin: 0;
+    padding: 0.8rem 1rem;
+    background: #f6f8fa;
+    border-bottom: 1px solid #ddd;
+    font-size: 0.9em;
+    font-weight: 600;
+  }
+
+  .explorer-tree {
+    list-style: none;
+    padding: 0.5rem;
+    margin: 0;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+
+  .explorer-folder {
+    margin: 0.3rem 0;
+  }
+
+  /* 文件夹样式 */
+  .explorer-folder details {
+    margin: 0.2rem 0;
+  }
+
+  .explorer-folder summary {
+    cursor: pointer;
+    padding: 0.4rem 0.6rem;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    user-select: none;
+  }
+
+  .explorer-folder summary:hover {
+    background: #f0f0f0;
+  }
+
+  .explorer-folder summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .explorer-folder summary:before {
+    content: "▶";
+    font-size: 0.7em;
+    transition: transform 0.2s;
+    display: inline-block;
+    width: 1em;
+    text-align: center;
+  }
+
+  .explorer-folder details[open] summary:before {
+    transform: rotate(90deg);
+  }
+
+  .folder-icon {
+    font-size: 1.1em;
+  }
+
+  .item-count {
+    font-size: 0.8em;
+    color: #6a737d;
+    margin-left: auto;
+  }
+
+  /* 文件列表样式 */
+  .folder-contents {
+    list-style: none;
+    padding-left: 1.5rem;
+    margin: 0.3rem 0;
+    border-left: 2px solid #e1e4e8;
+  }
+
+  .explorer-file {
+    margin: 0.1rem 0;
+  }
+
+  .explorer-file a {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.6rem;
+    text-decoration: none;
+    color: #24292e;
+    border-radius: 3px;
+    font-size: 0.85em;
+    transition: all 0.1s;
+  }
+
+  .explorer-file a:hover {
+    background: #0366d6;
+    color: white;
+  }
+
+  .explorer-file.active a {
+    background: #0366d6;
+    color: white;
+    font-weight: 500;
+  }
+
+  .file-icon {
+    font-size: 0.9em;
+    flex-shrink: 0;
+  }
+
+  /* 滚动条样式 */
+  .explorer-tree::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .explorer-tree::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+
+  .explorer-tree::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+  }
+
+  .explorer-tree::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+  }
+</style>

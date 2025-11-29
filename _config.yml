@@ -5,9 +5,9 @@ baseurl: ""
 
 # 下面是原有的参数。
 # (string) Title of your wiki
-title: 极乐嘉宾
+title: <p style="text-align: center;">极乐嘉宾</p>
 # (string) Description of your wiki
-description: 普愿沉溺诸众生，<br>速往无量光佛刹！
+description: <p style="text-align: center;">普愿沉溺诸众生<br>速往无量光佛刹</p>
 # (boolean) disable edit functionalities (edit/delete/add pages)
 disable_edit: true
 # (boolean) Enable/disable wiki page list in sidebar
@@ -139,7 +139,7 @@ inc_after_meta :
 inc_before_scripts : 
 inc_after_scripts : 
 inc_before_styles : 
-inc_after_styles : 
+inc_after_styles : "/_includes/mystyle.html"
 inc_before_header : 
 inc_after_header : 
 inc_before_tail : 
@@ -147,7 +147,7 @@ inc_after_tail :
 inc_before_tools : 
 inc_after_tools : 
 
-inc_before_page_list :
+inc_before_page_list : "/_includes/wiki_explorer.html"
 inc_after_page_list :
 inc_before_post_list :
 inc_after_post_list :
