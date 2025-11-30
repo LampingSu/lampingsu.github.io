@@ -1,7 +1,7 @@
 <!-- 可折叠的树形导航 -->
-<div class="explorer-nav">
-  📁 Wiki导航
-
+📁 Wiki导航
+<!-- 构建树形结构 -->
+<ul class="explorer-tree">
   {% assign all_wiki_pages = site.pages | where_exp: "page", "page.path contains 'wiki/'" | sort: "path" %}
   {% assign folders = "" | split: "" %}
 
@@ -15,64 +15,63 @@
   {% endunless %}
   {% endif %}
   {% endfor %}
+  {% for folder in folders %}
+  {% assign folder_pages = all_wiki_pages | where_exp: "page", "page.path contains folder" %}
 
-  <!-- 构建树形结构 -->
-  <ul class="explorer-tree">
-    {% for folder in folders %}
-    {% assign folder_pages = all_wiki_pages | where_exp: "page", "page.path contains folder" %}
+  <!-- 手动分离目录文件和其他文件 -->
+  {% assign toc_pages = "" | split: "" %}
+  {% assign other_pages = "" | split: "" %}
 
-    <!-- 手动分离目录文件和其他文件 -->
-    {% assign toc_pages = "" | split: "" %}
-    {% assign other_pages = "" | split: "" %}
+  {% for doc in folder_pages %}
+  {% if doc.path contains '_目录' %}
+  {% assign toc_pages = toc_pages | push: doc %}
+  {% else %}
+  {% assign other_pages = other_pages | push: doc %}
+  {% endif %}
+  {% endfor %}
 
-    {% for doc in folder_pages %}
-    {% if doc.path contains '_目录' %}
-    {% assign toc_pages = toc_pages | push: doc %}
-    {% else %}
-    {% assign other_pages = other_pages | push: doc %}
-    {% endif %}
-    {% endfor %}
+  <!-- 排序其他页面 -->
+  {% assign sorted_other_pages = other_pages | sort: "title" %}
+  {% assign sorted_pages = toc_pages | concat: sorted_other_pages %}
 
-    <!-- 排序其他页面 -->
-    {% assign sorted_other_pages = other_pages | sort: "title" %}
-    {% assign sorted_pages = toc_pages | concat: sorted_other_pages %}
+  <li class="explorer-folder">
+    <details {% if page.path contains folder %}open{% endif %}>
+      <summary>
+        <span class="folder-icon">
+          <span class="folder-closed">📁</span>
+          <span class="folder-open">📂</span>
+        </span>
+        {{ folder }}
+        <span class="item-count">({{ folder_pages.size }})</span>
+      </summary>
 
-    <li class="explorer-folder">
-      <details {% if page.path contains folder %}open{% endif %}>
-        <summary>
-          <span class="folder-icon">📁</span>
-          {{ folder }}
-          <span class="item-count">({{ folder_pages.size }})</span>
-        </summary>
-
-        <ul class="folder-contents">
-          {% for doc in sorted_pages %}
-          <li class="explorer-file {% if doc.url == page.url %}active{% endif %}">
-            <a href="{{ doc.url }}">
-              <span class="file-icon">
-                {% if doc.path contains '_目录' %}📋
-                {% else %}📄
-                {% endif %}
-              </span>
-              {% if doc.path contains '_目录' %}
-              目录
-              {% else %}
-              {% assign title_parts = doc.title | split: ")" %}
-              {% if title_parts.size > 1 %}
-              {{ title_parts[1] }}
-              {% else %}
-              {{ doc.title }}
+      <ul class="folder-contents">
+        {% for doc in sorted_pages %}
+        <li class="explorer-file {% if doc.url == page.url %}active{% endif %}">
+          <a href="{{ doc.url }}">
+            <span class="file-icon">
+              {% if doc.path contains '_目录' %}📋
+              {% else %}📄
               {% endif %}
-              {% endif %}
-            </a>
-          </li>
-          {% endfor %}
-        </ul>
-      </details>
-    </li>
-    {% endfor %}
-  </ul>
-</div>
+            </span>
+            {% if doc.path contains '_目录' %}
+            目录
+            {% else %}
+            {% assign title_parts = doc.title | split: ")" %}
+            {% if title_parts.size > 1 %}
+            {{ title_parts[1] }}
+            {% else %}
+            {{ doc.title }}
+            {% endif %}
+            {% endif %}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </details>
+  </li>
+  {% endfor %}
+</ul>
 
 <style>
   .explorer-nav {
@@ -92,6 +91,9 @@
   }
 
   .explorer-tree {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: white;
     list-style: none;
     padding: 0.5rem;
     margin: 0;
@@ -116,6 +118,7 @@
     gap: 0.5rem;
     font-weight: 500;
     user-select: none;
+    list-style: none;
   }
 
   .explorer-folder summary:hover {
@@ -126,21 +129,39 @@
     display: none;
   }
 
-  .explorer-folder summary:before {
-    content: "▶";
-    font-size: 0.7em;
-    transition: transform 0.2s;
-    display: inline-block;
-    width: 1em;
-    text-align: center;
-  }
-
-  .explorer-folder details[open] summary:before {
-    transform: rotate(90deg);
-  }
-
+  /* 动态文件夹图标 */
   .folder-icon {
+    position: relative;
+    width: 1.2em;
+    height: 1.2em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .folder-closed,
+  .folder-open {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transition: opacity 0.2s;
     font-size: 1.1em;
+  }
+
+  .folder-closed {
+    opacity: 1;
+  }
+
+  .folder-open {
+    opacity: 0;
+  }
+
+  .explorer-folder details[open] .folder-closed {
+    opacity: 0;
+  }
+
+  .explorer-folder details[open] .folder-open {
+    opacity: 1;
   }
 
   .item-count {

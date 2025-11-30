@@ -23,7 +23,7 @@
     </div>
 
 
-    {% if site.github.is_user_page %}
+    {% if site.show_github_profile and site.github.is_user_page%}
     <p class="view"><a href="{{ site.github.owner_url }}">View My GitHub Profile</a></p>
     {% endif %}
 

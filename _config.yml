@@ -2,6 +2,7 @@
 github_username: "LampingSu"
 github_repository: "lampingsu.github.io"
 baseurl: ""
+show_github_profile: false
 
 # 下面是原有的参数。
 # (string) Title of your wiki
