@@ -2,13 +2,19 @@
 {% assign episode_id = page.title | split: "(" | last | split: ")" | first %}
 
 {% assign collection_path_prefix = collection_name | append: '/' | append: collection_name | append: '_' %}
-{% assign toc_path_prefix = collection_path_prefix | append: '目录' %}
-{% assign collection_pages = site.pages | where_exp: "page_item", "page_item.path contains collection_path_prefix" %}
-{% assign collection_pages = collection_pages | where_exp: "page_item", "page_item.path contains toc_path_prefix ==
-false" | sort: "path" %}
+{% assign collection_pages = site.pages | where_exp: "page_item", "page_item.path contains collection_path_prefix" |
+sort: "path" %}
 
-{% assign first_page = collection_pages | first %}
-{% assign last_page = collection_pages | last %}
+{% assign toc_path_prefix = collection_path_prefix | append: '目录' %}
+{% assign filtered_pages = "" | split: "" %}
+{% for page in collection_pages %}
+{% unless page.path contains toc_path_prefix %}
+{% assign filtered_pages = filtered_pages | push: page %}
+{% endunless %}
+{% endfor %}
+
+{% assign first_page = filtered_pages | first %}
+{% assign last_page = filtered_pages | last %}
 {% assign id_min_num = first_page.title | split: "(" | last | split: ")" | first | plus: 0 %}
 {% assign id_max_num = last_page.title | split: "(" | last | split: ")" | first | plus: 0 %}
 
