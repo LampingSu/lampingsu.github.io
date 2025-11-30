@@ -5,13 +5,15 @@
 {% assign collection_pages = site.pages | where_exp: "page_item", "page_item.path contains collection_path_prefix" |
 sort: "path" %}
 
-{% assign toc_path_prefix = collection_path_prefix | append: '目录' %}
+{% assign toc_path_prefix = collection_path_prefix | append: '目录.md' %}
 {% assign filtered_pages = "" | split: "" %}
-{% for page_item in collection_pages %}
+{% assign filtered_pages = collection_pages | where_exp: "page_item", "page_item.path ！= toc_path_prefix" |
+sort: "path"%}
+<!-- {% for page_item in collection_pages %}
 {% unless page_item.path contains toc_path_prefix %}
 {% assign filtered_pages = filtered_pages | push: page_item %}
 {% endunless %}
-{% endfor %}
+{% endfor %} -->
 
 {% assign first_page = filtered_pages | first %}
 {% assign last_page = filtered_pages | last %}
@@ -36,9 +38,7 @@ sort: "path" %}
 {% endif %}
 
 <div style="margin: 1rem 0; padding: 1rem; background: #f5f5f5; border-radius: 4px;">
-  path：{{ page.path }}；
-  min：{{ id_min_num }}；
-  max：{{ id_max_num }}；
+  max: {{ id_max_num }} |
   <a href="/">网站首页</a> |
   <a href="/{{ collection_name }}_目录">文集目录</a> |
   {% if prev_id %}
