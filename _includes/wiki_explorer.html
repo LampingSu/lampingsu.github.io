@@ -47,7 +47,7 @@
 
       <ul class="folder-contents">
         {% for doc in sorted_pages %}
-        {% assign doc_tile = doc.title %}
+        {% assign doc_title = doc.title %}
         {% assign is_toc = false %}
         {% assign title_parts = doc.title | split: "(" %}
         {% if title_parts.size == 2 %}
@@ -58,10 +58,10 @@
         {% assign episode_id = rest_parts | first %}
         {% assign episode_name = rest_parts | last %}
         {% if rest_parts.size == 2 %}
-        {% assign doc_tile = episode_id | append: ' ' | append: episode_name %}
+        {% assign doc_title = episode_id | append: ' ' | append: episode_name %}
         {% elsif rest_parts.size == 1 %}
         {% if episode_id == '目录' %}
-        {% assign doc_tile = episode_id %}
+        {% assign doc_title = episode_id %}
         {% assign is_toc = true %}
         {% endif %}
         {% endif %}
