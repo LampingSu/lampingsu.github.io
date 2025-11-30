@@ -7,7 +7,7 @@ sort: "path" %}
 
 {% assign toc_path_prefix = collection_path_prefix | append: '目录.md' %}
 {% assign filtered_pages = "" | split: "" %}
-{% assign filtered_pages = collection_pages | where_exp: "page_item", "page_item.path ！= toc_path_prefix" |
+{% assign filtered_pages = collection_pages | where_exp: "page_item", "page_item.path != toc_path_prefix" |
 sort: "path"%}
 <!-- {% for page_item in collection_pages %}
 {% unless page_item.path contains toc_path_prefix %}
