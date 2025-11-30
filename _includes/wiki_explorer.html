@@ -1,5 +1,5 @@
 <!-- 可折叠的树形导航 -->
-📁 Wiki导航
+网站导航
 <!-- 构建树形结构 -->
 <ul class="explorer-tree">
   {% assign all_wiki_pages = site.pages | where_exp: "page", "page.path contains 'wiki/'" | sort: "path" %}
@@ -47,23 +47,29 @@
 
       <ul class="folder-contents">
         {% for doc in sorted_pages %}
+        {% assign doc_tile = doc.title %}
+        {% assign is_toc = false %}
+        {% assign title_parts = doc.title | split: "(" %}
+        {% if title_parts.size == 2 %}
+        {% assign collection_name = title_parts | first %}
+        {% if collection_name == folder %}
+        {% assign title_rest = title_parts | last %}
+        {% assign rest_parts = title_rest | split: ")" %}
+        {% assign episode_id = rest_parts | first %}
+        {% assign episode_name = rest_parts | last %}
+        {% if rest_parts.size == 2 %}
+        {% assign doc_tile = episode_id | append: ' ' | append: episode_name %}
+        {% elsif rest_parts.size == 1 %}
+        {% if episode_id == '目录' %}
+        {% assign doc_tile = episode_id %}
+        {% assign is_toc = true %}
+        {% endif %}
+        {% endif %}
+        {% endif %}
+        {% endif %}
         <li class="explorer-file {% if doc.url == page.url %}active{% endif %}">
           <a href="{{ doc.url }}">
-            <span class="file-icon">
-              {% if doc.path contains '_目录' %}📋
-              {% else %}📄
-              {% endif %}
-            </span>
-            {% if doc.path contains '_目录' %}
-            目录
-            {% else %}
-            {% assign title_parts = doc.title | split: ")" %}
-            {% if title_parts.size > 1 %}
-            {{ title_parts[1] }}
-            {% else %}
-            {{ doc.title }}
-            {% endif %}
-            {% endif %}
+            <span class="file-icon">{% if is_toc %}📋{% else %}📄{% endif %}</span>{{ doc_title }}
           </a>
         </li>
         {% endfor %}
@@ -74,22 +80,6 @@
 </ul>
 
 <style>
-  .explorer-nav {
-    margin-bottom: 2rem;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    background: white;
-  }
-
-  .explorer-nav h3 {
-    margin: 0;
-    padding: 0.8rem 1rem;
-    background: #f6f8fa;
-    border-bottom: 1px solid #ddd;
-    font-size: 0.9em;
-    font-weight: 600;
-  }
-
   .explorer-tree {
     border: 1px solid #ddd;
     border-radius: 6px;

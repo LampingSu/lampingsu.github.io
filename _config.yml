@@ -8,7 +8,7 @@ show_github_profile: false
 # (string) Title of your wiki
 title: "极乐嘉宾"
 # (string) Description of your wiki
-description: "<p style='text-align: center;'>普愿沉溺诸众生<br>速往无量光佛刹</p>"
+description: "普愿沉溺诸众生，<br>速往无量光佛刹！"
 # (boolean) disable edit functionalities (edit/delete/add pages)
 disable_edit: true
 # (boolean) Enable/disable wiki page list in sidebar
