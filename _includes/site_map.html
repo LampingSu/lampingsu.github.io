@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <style>
+    .tree {
+      list-style: none;
+      padding-left: 20px;
+      font-family: system-ui;
+    }
+
+    details>summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      padding: 4px 0;
+    }
+
+    details>summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .folder-icon {
+      margin-right: 8px;
+      font-size: 18px;
+    }
+
+    .file-icon {
+      margin-right: 8px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+
+<body>
+  <ul class="tree">
+    {% assign path_tree = "" | split: "" %}
+    {% assign paths = site.pages | map: 'path' | uniq %}
+
+    <!-- 构建目录树 -->
+    {% for path in paths %}
+    {% assign parts = path | split: "/" | reject: 'empty' %}
+    {% assign current_level = path_tree %}
+
+    {% for part in parts %}
+    {% assign is_last = forloop.last %}
+    {% assign existing_nodes = current_level | where: 'name', part %}
+
+    {% if existing_nodes.size == 0 %}
+    {% assign new_node = '' %}
+    {% if is_last %}
+    {% assign new_node = '{ "name": "' | append: part | append: '", "type": "file" }' %}
+    {% else %}
+    {% assign new_node = '{ "name": "' | append: part | append: '", "type": "folder", "children": [] }' %}
+    {% endif %}
+    {% assign current_level = current_level | push: new_node | parse_json %}
+    {% endif %}
+
+    {% unless is_last %}
+    {% assign current_level = current_level | where: 'name', part | first | map: 'children' | first %}
+    {% endunless %}
+    {% endfor %}
+    {% endfor %}
+
+    <!-- 渲染目录树 -->
+    {% assign build_tree = '' | split: '' %}
+    {% assign queue = path_tree %}
+
+    {% while queue.size > 0 %}
+    {% assign current = queue.first %}
+    {% assign queue = queue | shift %}
+    {% assign build_tree = build_tree | push: current %}
+
+    {% if current.type == 'folder' %}
+    {% assign queue = queue | concat: current.children | uniq %}
+    {% endif %}
+    {% endwhile %}
+
+    {% macro render_node node %}
+    {% if node.type == 'folder' %}
+    <li>
+      <details {% if forloop.index0 < 2 %}open{% endif %}>
+        <summary>
+          <span class="folder-icon">📁</span>
+          <span class="folder-icon">📂</span>
+          {{ node.name }}
+        </summary>
+        <ul>
+          {% for child in node.children %}
+          {{ render_node(child) }}
+          {% endfor %}
+        </ul>
+      </details>
+    </li>
+    {% else %}
+    <li>
+      <span class="file-icon">📄</span>
+      {{ node.name }}
+    </li>
+    {% endif %}
+    {% endmacro %}
+
+    {% for item in build_tree %}
+    {{ render_node(item) }}
+    {% endfor %}
+  </ul>
+</body>
+
+</html>
