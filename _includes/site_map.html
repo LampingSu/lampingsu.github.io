@@ -3,22 +3,11 @@
 
 <head>
   <style>
-    .tree {
-      list-style: none;
-      padding-left: 20px;
-      font-family: system-ui;
-    }
-
-    details>summary {
-      list-style: none;
+    .tree details>summary {
       cursor: pointer;
       display: flex;
       align-items: center;
       padding: 4px 0;
-    }
-
-    details>summary::-webkit-details-marker {
-      display: none;
     }
 
     .folder-icon {
@@ -48,7 +37,6 @@
     {% assign existing_nodes = current_level | where: 'name', part %}
 
     {% if existing_nodes.size == 0 %}
-    {% assign new_node = '' %}
     {% if is_last %}
     {% assign new_node = '{ "name": "' | append: part | append: '", "type": "file" }' %}
     {% else %}
@@ -67,7 +55,9 @@
     {% assign build_tree = '' | split: '' %}
     {% assign queue = path_tree %}
 
-    {% while queue.size > 0 %}
+    <!-- 使用for循环替代while -->
+    {% for item in (1..100) %}
+    {% if queue.size > 0 %}
     {% assign current = queue.first %}
     {% assign queue = queue | shift %}
     {% assign build_tree = build_tree | push: current %}
@@ -75,20 +65,24 @@
     {% if current.type == 'folder' %}
     {% assign queue = queue | concat: current.children | uniq %}
     {% endif %}
-    {% endwhile %}
+    {% endif %}
+    {% endfor %}
 
-    {% macro render_node node %}
+    <!-- 最终渲染 -->
+    {% for node in build_tree %}
     {% if node.type == 'folder' %}
     <li>
-      <details {% if forloop.index0 < 2 %}open{% endif %}>
+      <details>
         <summary>
           <span class="folder-icon">📁</span>
-          <span class="folder-icon">📂</span>
           {{ node.name }}
         </summary>
         <ul>
           {% for child in node.children %}
-          {{ render_node(child) }}
+          <li>
+            <span class="folder-icon">📁</span>
+            {{ child.name }}
+          </li>
           {% endfor %}
         </ul>
       </details>
@@ -99,10 +93,6 @@
       {{ node.name }}
     </li>
     {% endif %}
-    {% endmacro %}
-
-    {% for item in build_tree %}
-    {{ render_node(item) }}
     {% endfor %}
   </ul>
 </body>
