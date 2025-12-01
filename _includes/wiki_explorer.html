@@ -15,7 +15,7 @@
   {% endunless %}
   {% endif %}
   {% endfor %}
-  
+
   {% for folder in folders %}
   {% assign folder_pages = all_wiki_pages | where_exp: "page", "page.path contains folder" %}
 
