@@ -19,7 +19,7 @@
   {% else %}
   {% assign new_node = '{ "name": "' | append: part | append: '", "type": "folder", "children": [] }' %}
   {% endif %}
-  {% assign current_level = current_level | push: new_node | parse_json %}
+  {% assign current_level = current_level | push: new_node | jsonify | split: ',' %}
   {% endif %}
 
   {% unless is_last %}
