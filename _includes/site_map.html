@@ -1,22 +1,4 @@
-<style>
-  .tree details>summary {
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    padding: 4px 0;
-  }
-
-  .folder-icon {
-    margin-right: 8px;
-    font-size: 18px;
-  }
-
-  .file-icon {
-    margin-right: 8px;
-    font-size: 18px;
-  }
-</style>
-
+网站导航
 <ul class="tree">
   {% assign path_tree = "" | split: "" %}
   {% assign paths = site.pages | map: 'path' | uniq %}
@@ -89,3 +71,22 @@
   {% endif %}
   {% endfor %}
 </ul>
+
+<style>
+  .tree details>summary {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 4px 0;
+  }
+
+  .folder-icon {
+    margin-right: 8px;
+    font-size: 18px;
+  }
+
+  .file-icon {
+    margin-right: 8px;
+    font-size: 18px;
+  }
+</style>
