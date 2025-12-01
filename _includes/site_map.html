@@ -1,105 +1,47 @@
-<div class="debug-panel">
-  <h3>调试面板</h3>
+{% assign path_tree = "" | split: "" %}
+{% assign paths = site.pages | map: 'path' | uniq %}
+paths: .size = {{ paths.size }} | .first = {{ paths | first }} | .last = {{ paths | last }}<br>
 
-  <!-- 路径处理调试 -->
-  <details>
-    <summary>路径处理过程 (点击展开)</summary>
-    {% for path in paths %}
-    <div class="debug-item">
-      <strong>处理路径:</strong> {{ path }}
-      <div class="debug-details">
-        <strong>分割结果:</strong>
-        <code>{{ path | split: '/' | reject: 'empty' | join: ' → ' }}</code>
-      </div>
-    </div>
-    {% endfor %}
-</div>
-</details>
+<!-- 构建目录树 -->
+{% for path in paths %}
+{% assign parts = path | split: "/" | reject: 'empty' %}
+parts: .size = {{ parts.size }} | .first = {{ parts | first }} | .last = {{ parts | last }}<br>
 
-<!-- 目录树构建调试 -->
-<details>
-  <summary>目录树构建过程 (点击展开)</summary>
-  {% assign debug_tree = "" | split: "" %}
-  {% assign debug_paths = site.pages | map: 'path' | uniq %}
+{% assign current_level = path_tree %}
 
-  {% for path in debug_paths %}
-  {% assign parts = path | split: "/" | reject: 'empty' %}
-  {% assign current_level = debug_tree %}
+{% for part in parts %}
+{% assign is_last = forloop.last %}
+{% assign existing_nodes = current_level | where: 'name', part %}
+existing_nodes: .size = {{ existing_nodes.size }}| .first = {{ existing_nodes | first }} | .last = {{ existing_nodes |
+last }}<br>
 
-  {% for part in parts %}
-  {% assign is_last = forloop.last %}
-  {% assign existing_nodes = current_level | where: 'name', part %}
+{% if existing_nodes.size == 0 %}
+{% if is_last %}
+{% assign new_node = '{ "name": "' | append: part | append: '", "type": "file" }' %}
+{% else %}
+{% assign new_node = '{ "name": "' | append: part | append: '", "type": "folder", "children": [] }' %}
+{% endif %}
+new_node = {{ new_node }}<br>
 
-  <div class="debug-step">
-    <strong>层级 {{ forloop.index }}:</strong> {{ part }}
-    <div class="debug-details">
-      <strong>当前节点:</strong>
-      {% if existing_nodes.size > 0 %}
-      {{ existing_nodes[0].name }} (已存在)
-      {% else %}
-      创建新节点
-      {% endif %}
+{% assign current_level = current_level | push: new_node | parse_json %}
+current_level: .size = {{ current_level.size }}| .first = {{ current_level | first }} | .last = {{ current_level |
+last }}<br>
+{% endif %}
 
-      <strong>节点类型:</strong>
-      {% if is_last %}文件{% else %}文件夹{% endif %}
-    </div>
-  </div>
+{% unless is_last %}
+{% assign current_level = current_level | where: 'name', part | first | map: 'children' | first %}
+current_level: .size = {{ current_level.size }}| .first = {{ current_level | first }} | .last = {{ current_level |
+last }}<br>
+{% endunless %}
+{% endfor %}
+{% endfor %}
 
-  {% if existing_nodes.size == 0 %}
-  {% if is_last %}
-  {% assign new_node = '{ "name": "' | append: part | append: '", "type": "file" }' %}
-  {% else %}
-  {% assign new_node = '{ "name": "' | append: part | append: '", "type": "folder", "children": [] }' %}
-  {% endif %}
-  {% assign current_level = current_level | push: new_node | parse_json %}
-  {% endif %}
-
-  {% unless is_last %}
-  {% assign current_level = current_level | where: 'name', part | first | map: 'children' | first %}
-  {% endunless %}
-  {% endfor %}
-  {% endfor %}
-</details>
-
-<!-- 最终目录树结构 -->
-<details>
-  <summary>最终目录树结构 (点击展开)</summary>
-  <pre class="debug-tree">{{ site.pages | map: 'path' | uniq | jsonify }}</pre>
-</details>
-
-<!-- 原始目录树渲染代码 -->
 <ul class="tree">
-  {% assign path_tree = "" | split: "" %}
-  {% assign paths = site.pages | map: 'path' | uniq %}
-
-  <!-- 构建目录树 -->
-  {% for path in paths %}
-  {% assign parts = path | split: "/" | reject: 'empty' %}
-  {% assign current_level = path_tree %}
-
-  {% for part in parts %}
-  {% assign is_last = forloop.last %}
-  {% assign existing_nodes = current_level | where: 'name', part %}
-
-  {% if existing_nodes.size == 0 %}
-  {% if is_last %}
-  {% assign new_node = '{ "name": "' | append: part | append: '", "type": "file" }' %}
-  {% else %}
-  {% assign new_node = '{ "name": "' | append: part | append: '", "type": "folder", "children": [] }' %}
-  {% endif %}
-  {% assign current_level = current_level | push: new_node | parse_json %}
-  {% endif %}
-
-  {% unless is_last %}
-  {% assign current_level = current_level | where: 'name', part | first | map: 'children' | first %}
-  {% endunless %}
-  {% endfor %}
-  {% endfor %}
-
   <!-- 渲染目录树 -->
   {% assign build_tree = '' | split: '' %}
   {% assign queue = path_tree %}
 
+  <!-- 使用for循环替代while -->
   {% for item in (1..100) %}
   {% if queue.size > 0 %}
   {% assign current = queue.first %}
@@ -141,56 +83,6 @@
 </ul>
 
 <style>
-  .debug-panel {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 4px;
-    padding: 15px;
-    margin-bottom: 20px;
-    font-family: monospace;
-    font-size: 14px;
-  }
-
-  .debug-panel details {
-    margin-bottom: 10px;
-  }
-
-  .debug-panel summary {
-    background: #e9ecef;
-    padding: 8px;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-bottom: 5px;
-  }
-
-  .debug-item,
-  .debug-step {
-    padding: 8px;
-    margin: 5px 0;
-    background: white;
-    border-left: 3px solid #495057;
-  }
-
-  .debug-details {
-    margin-top: 5px;
-    padding: 8px;
-    background: #f8f9fa;
-    border-radius: 4px;
-  }
-
-  .debug-tree {
-    background: white;
-    padding: 10px;
-    border-radius: 4px;
-    max-height: 300px;
-    overflow: auto;
-  }
-
-  .tree {
-    list-style: none;
-    padding-left: 20px;
-  }
-
   .tree details>summary {
     cursor: pointer;
     display: flex;
@@ -198,7 +90,11 @@
     padding: 4px 0;
   }
 
-  .folder-icon,
+  .folder-icon {
+    margin-right: 8px;
+    font-size: 18px;
+  }
+
   .file-icon {
     margin-right: 8px;
     font-size: 18px;
