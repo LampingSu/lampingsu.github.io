@@ -36,6 +36,10 @@ last }}<br>
 {% endfor %}
 {% endfor %}
 
+{% for node in path_tree %}
+node = {{ node }} | node.type = {{ node.type }} | node | map: 'type' = {{ node | map: 'type' }}<br>
+{% endfor %}
+
 <ul class="tree">
   <!-- 渲染目录树 -->
   {% assign build_tree = '' | split: '' %}
