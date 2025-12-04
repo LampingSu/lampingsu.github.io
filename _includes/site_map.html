@@ -1,13 +1,14 @@
 {% assign path_tree = "" | split: "" %}
 {% assign paths = site.pages | map: 'path' | uniq %}
-paths: .size = {{ paths.size }} | .first = {{ paths | first }} | .last = {{ paths | last }}<br>
 
 <!-- 构建目录树 -->
 {% for path in paths %}
 {% assign parts = path | split: "/" | reject: 'empty' %}
-parts: .size = {{ parts.size }} | .first = {{ parts | first }} | .last = {{ parts | last }}<br>
 
 {% assign current_level = path_tree %}
+{% for node in path_tree %}
+node = {{ node }} | node.type = {{ node.type }} | node | map: 'type' = {{ node | map: 'type' }}<br>
+{% endfor %}
 
 {% for part in parts %}
 {% assign is_last = forloop.last %}
@@ -26,6 +27,9 @@ new_node = {{ new_node }}<br>
 {% assign current_level = current_level | push: new_node | parse_json %}
 current_level: .size = {{ current_level.size }}| .first = {{ current_level | first }} | .last = {{ current_level |
 last }}<br>
+{% for node in path_tree %}
+node = {{ node }} | node.type = {{ node.type }} | node | map: 'type' = {{ node | map: 'type' }}<br>
+{% endfor %}
 {% endif %}
 
 {% unless is_last %}
@@ -37,7 +41,7 @@ last }}<br>
 {% endfor %}
 
 {% for node in path_tree %}
-node = {{ node }} | node.type = {{ node.type }} | node | map: 'type' = {{ node | map: 'type' }}<br>
+最后：node = {{ node }} | node.type = {{ node.type }} | node | map: 'type' = {{ node | map: 'type' }}<br>
 {% endfor %}
 
 <ul class="tree">
