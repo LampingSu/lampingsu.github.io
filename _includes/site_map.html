@@ -3,7 +3,7 @@
 
   {% comment %} 配置部分：根据您的实际目录结构修改这些变量 {% endcomment %}
   {% assign wiki_folder = "wiki" %} {% comment %} 您的wiki文件夹名称 {% endcomment %}
-  {% assign wiki_prefix = "_wiki/" %} {% comment %} 页面路径中的前缀 {% endcomment %}
+  {% assign wiki_prefix = "wiki/" %} {% comment %} 页面路径中的前缀 {% endcomment %}
 
   <div class="path-info">
     文档路径: <code>/{{ wiki_folder }}/</code> | 共找到 <strong>{{ site.pages | where_exp: "page", "page.path contains
