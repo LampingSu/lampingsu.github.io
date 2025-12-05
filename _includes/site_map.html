@@ -1,114 +1,375 @@
-{% assign path_tree = "" | split: "" %}
-{% assign paths = site.pages | map: 'path' | uniq %}
+<div class="wiki-tree">
+  📚 Wiki目录
 
-<!-- 构建目录树 -->
-{% for path in paths %}
-[path: {{ path }}]<br>
-{% assign parts = path | split: "/" | reject: 'empty' %}
+  {% comment %} 配置部分：根据您的实际目录结构修改这些变量 {% endcomment %}
+  {% assign wiki_folder = "wiki" %} {% comment %} 您的wiki文件夹名称 {% endcomment %}
+  {% assign wiki_prefix = "_wiki/" %} {% comment %} 页面路径中的前缀 {% endcomment %}
 
-{% assign current_level = path_tree %}
-path_tree:
-{% for node in path_tree %}
-node = {{ node }} | node.type = {{ node.type }} | node | map: 'type' = {{ node | map: 'type' }}<br>
-{% endfor %}
+  <div class="path-info">
+    文档路径: <code>/{{ wiki_folder }}/</code> | 共找到 <strong>{{ site.pages | where_exp: "page", "page.path contains
+      wiki_prefix" | size }}</strong> 个文档
+  </div>
 
-{% for part in parts %}
-[part: {{ part }}]<br>
-{% assign is_last = forloop.last %}
-{% assign existing_nodes = current_level | where: 'name', part %}
-existing_nodes: .size = {{ existing_nodes.size }}| .first = {{ existing_nodes | first }} | .last = {{ existing_nodes |
-last }}<br>
+  {% comment %} 获取所有wiki页面 {% endcomment %}
+  {% assign all_wiki_pages = site.pages | where_exp: "page", "page.path contains wiki_prefix" %}
 
-{% if existing_nodes.size == 0 %}
-{% if is_last %}
-{% assign new_node = '{ "name": "' | append: part | append: '", "type": "file" }' %}
-{% else %}
-{% assign new_node = '{ "name": "' | append: part | append: '", "type": "folder", "children": [] }' %}
-{% endif %}
-new_node = {{ new_node }}<br>
-{% assign current_level = current_level | push: new_node | parse_json %}
-current_level: .size = {{ current_level.size }}| .first = {{ current_level | first }} | .last = {{ current_level |
-last }}<br>
-path_tree:
-{% for node in path_tree %}
-node = {{ node }} | node.type = {{ node.type }} | node | map: 'type' = {{ node | map: 'type' }}<br>
-{% endfor %}
-{% endif %}
+  {% if all_wiki_pages.size > 0 %}
+  {% comment %} 创建路径树数据结构 {% endcomment %}
+  {% assign path_tree = "" | split: "" %}
 
-{% unless is_last %}
-{% assign current_level = current_level | where: 'name', part | first | map: 'children' | first %}
-current_level: .size = {{ current_level.size }}| .first = {{ current_level | first }} | .last = {{ current_level |
-last }}<br>
-{% endunless %}
-{% endfor %}
-{% endfor %}
+  {% for page in all_wiki_pages %}
+  {% comment %} 处理页面路径，移除前缀和扩展名 {% endcomment %}
+  {% assign clean_path = page.path | remove: wiki_prefix %}
+  {% assign clean_path = clean_path | remove: ".md" | remove: ".html" | remove: ".markdown" %}
 
-最终的path_tree:
-{% for node in path_tree %}
-node = {{ node }} | node.type = {{ node.type }} | node | map: 'type' = {{ node | map: 'type' }}<br>
-{% endfor %}
+  {% comment %} 将路径分割为部分 {% endcomment %}
+  {% assign path_parts = clean_path | split: "/" %}
 
-<ul class="tree">
-  <!-- 渲染目录树 -->
-  {% assign build_tree = '' | split: '' %}
-  {% assign queue = path_tree %}
+  {% comment %} 将页面添加到树结构中 {% endcomment %}
+  {% assign current_level = path_tree %}
 
-  <!-- 使用for循环替代while -->
-  {% for item in (1..100) %}
-  {% if queue.size > 0 %}
-  {% assign current = queue.first %}
-  {% assign queue = queue | shift %}
-  {% assign build_tree = build_tree | push: current %}
+  {% for part in path_parts %}
+  {% assign part_name = part %}
+  {% assign is_last = forloop.last %}
 
-  {% if current.type == 'folder' %}
-  {% assign queue = queue | concat: current.children | uniq %}
-  {% endif %}
+  {% comment %} 在当前层级查找是否已存在此部分 {% endcomment %}
+  {% assign existing_node = nil %}
+  {% for node in current_level %}
+  {% if node.name == part_name %}
+  {% assign existing_node = node %}
+  {% break %}
   {% endif %}
   {% endfor %}
 
-  <!-- 最终渲染 -->
-  {% for node in build_tree %}
-  {% if node.type == 'folder' %}
-  <li>
-    <details>
-      <summary>
-        <span class="folder-icon">📁</span>
-        {{ node.name }}
-      </summary>
-      <ul>
-        {% for child in node.children %}
-        <li>
-          <span class="folder-icon">📁</span>
-          {{ child.name }}
-        </li>
-        {% endfor %}
-      </ul>
-    </details>
-  </li>
+  {% if existing_node %}
+  {% comment %} 如果节点已存在，进入下一层 {% endcomment %}
+  {% assign current_level = existing_node.children %}
   {% else %}
-  <li>
-    <span class="file-icon">📄</span>
-    {{ node.name }}
-  </li>
+  {% comment %} 如果节点不存在，创建新节点 {% endcomment %}
+  {% assign new_node_name = part_name %}
+  {% assign new_node_is_file = is_last %}
+  {% assign new_node_page = page %}
+  {% assign new_node_children = "" | split: "" %}
+
+  {% assign node_data = "" | split: "" %}
+  {% assign node_data = node_data | push: new_node_name %}
+  {% assign node_data = node_data | push: new_node_is_file %}
+  {% assign node_data = node_data | push: new_node_page %}
+  {% assign node_data = node_data | push: new_node_children %}
+
+  {% assign current_level = current_level | push: node_data %}
+
+  {% comment %} 获取新添加的节点引用 {% endcomment %}
+  {% for node in current_level %}
+  {% if node[0] == part_name %}
+  {% assign current_level = node[3] %}
+  {% break %}
   {% endif %}
   {% endfor %}
-</ul>
+  {% endif %}
+  {% endfor %}
+  {% endfor %}
+
+  {% comment %} 递归渲染树形结构的函数。由于Liquid不支持递归函数，我们使用嵌套循环处理有限深度的结构 {% endcomment %}
+  {% if path_tree.size > 0 %}
+  <ul class="tree">
+    {% for node in path_tree %}
+    {% assign node_name = node[0] %}
+    {% assign node_is_file = node[1] %}
+    {% assign node_page = node[2] %}
+    {% assign node_children = node[3] %}
+
+    <li>
+      {% if node_is_file %}
+      {% comment %} 文件项 {% endcomment %}
+      <div class="tree-item">
+        <div class="icon file-icon">📄</div>
+        <a href="{{ node_page.url | relative_url }}" class="file-link">
+          <span class="file-name">{{ node_name }}</span>
+        </a>
+      </div>
+      {% else %}
+      {% comment %} 文件夹项 {% endcomment %}
+      <details {% if node_children.size> 0 %}open{% endif %}>
+        <summary>
+          <div class="tree-item">
+            <div class="icon folder-icon">
+              {% if node_children.size > 0 %}
+              📂
+              {% else %}
+              📁
+              {% endif %}
+            </div>
+            <span class="folder-name">{{ node_name }}</span>
+          </div>
+        </summary>
+
+        {% if node_children.size > 0 %}
+        <ul>
+          {% for child_node in node_children %}
+          {% assign child_name = child_node[0] %}
+          {% assign child_is_file = child_node[1] %}
+          {% assign child_page = child_node[2] %}
+          {% assign child_children = child_node[3] %}
+
+          <li>
+            {% if child_is_file %}
+            {% comment %} 第二级文件项 {% endcomment %}
+            <div class="tree-item">
+              <div class="icon file-icon">📄</div>
+              <a href="{{ child_page.url | relative_url }}" class="file-link">
+                <span class="file-name">{{ child_name }}</span>
+              </a>
+            </div>
+            {% else %}
+            {% comment %} 第二级文件夹项 {% endcomment %}
+            <details {% if child_children.size> 0 %}open{% endif %}>
+              <summary>
+                <div class="tree-item">
+                  <div class="icon folder-icon">
+                    {% if child_children.size > 0 %}
+                    📂
+                    {% else %}
+                    📁
+                    {% endif %}
+                  </div>
+                  <span class="folder-name">{{ child_name }}</span>
+                </div>
+              </summary>
+
+              {% if child_children.size > 0 %}
+              <ul>
+                {% for grandchild_node in child_children %}
+                {% assign grandchild_name = grandchild_node[0] %}
+                {% assign grandchild_is_file = grandchild_node[1] %}
+                {% assign grandchild_page = grandchild_node[2] %}
+                {% assign grandchild_children = grandchild_node[3] %}
+
+                <li>
+                  {% if grandchild_is_file %}
+                  {% comment %} 第三级文件项 {% endcomment %}
+                  <div class="tree-item">
+                    <div class="icon file-icon">📄</div>
+                    <a href="{{ grandchild_page.url | relative_url }}" class="file-link">
+                      <span class="file-name">{{ grandchild_name }}</span>
+                    </a>
+                  </div>
+                  {% else %}
+                  {% comment %} 第三级文件夹项（简单处理，不继续嵌套）{% endcomment %}
+                  <div class="tree-item">
+                    <div class="icon folder-icon">
+                      {% if grandchild_children.size > 0 %}
+                      📂
+                      {% else %}
+                      📁
+                      {% endif %}
+                    </div>
+                    <span class="folder-name">{{ grandchild_name }}</span>
+                    {% if grandchild_children.size > 0 %}
+                    <span style="margin-left: 8px; color: #999; font-size: 13px;">
+                      ({{ grandchild_children.size }} 个项目)
+                    </span>
+                    {% endif %}
+                  </div>
+                  {% endif %}
+                </li>
+                {% endfor %}
+              </ul>
+              {% else %}
+              <div class="empty-folder">空文件夹</div>
+              {% endif %}
+            </details>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div class="empty-folder">空文件夹</div>
+        {% endif %}
+      </details>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="empty-message">
+    目录结构解析失败。请检查wiki页面路径。
+  </div>
+  {% endif %}
+  {% else %}
+  <div class="empty-message">
+    未找到Wiki文档。请确保：
+    <ol style="text-align: left; display: inline-block; margin-top: 10px;">
+      <li>您的wiki文档存储在 <code>{{ wiki_prefix }}</code> 目录中</li>
+      <li>文档使用正确的扩展名（.md, .html, .markdown）</li>
+      <li>您已经运行了 <code>jekyll build</code> 或 <code>bundle exec jekyll serve</code></li>
+    </ol>
+  </div>
+  {% endif %}
+
+  <div
+    style="margin-top: 30px; padding-top: 15px; border-top: 1px solid var(--border-color); font-size: 13px; color: #777; text-align: center;">
+    最后更新: {{ site.time | date: "%Y-%m-%d %H:%M" }} |
+    使用 <strong>&lt;details&gt;</strong> 标签实现，无需JavaScript
+  </div>
+</div>
 
 <style>
-  .tree details>summary {
-    cursor: pointer;
+  :root {
+    --folder-open-color: #ff9800;
+    --folder-closed-color: #ffb74d;
+    --file-color: #78909c;
+    --hover-color: #f5f5f5;
+    --border-color: #e0e0e0;
+    --text-color: #333;
+    --light-text: #666;
+  }
+
+  .wiki-tree {
+    font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  .wiki-tree h2 {
+    color: var(--text-color);
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+  }
+
+  .tree {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+  }
+
+  .tree ul {
+    list-style: none;
+    padding-left: 24px;
+    margin: 0;
+  }
+
+  .tree li {
+    margin: 4px 0;
+    position: relative;
+  }
+
+  .tree-item {
     display: flex;
     align-items: center;
-    padding: 4px 0;
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+  }
+
+  .tree-item:hover {
+    background-color: var(--hover-color);
+  }
+
+  .icon {
+    margin-right: 10px;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
   }
 
   .folder-icon {
-    margin-right: 8px;
-    font-size: 18px;
+    color: var(--folder-closed-color);
+  }
+
+  details[open]>.tree-item>.folder-icon {
+    color: var(--folder-open-color);
   }
 
   .file-icon {
-    margin-right: 8px;
-    font-size: 18px;
+    color: var(--file-color);
+    font-size: 16px;
+  }
+
+  .folder-name,
+  .file-name {
+    color: var(--text-color);
+    font-size: 15px;
+  }
+
+  .file-name {
+    color: var(--light-text);
+  }
+
+  .file-link {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+  }
+
+  .file-link:hover .file-name {
+    text-decoration: underline;
+    color: #1976d2;
+  }
+
+  summary {
+    display: block;
+    cursor: pointer;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary::marker {
+    display: none;
+  }
+
+  summary .tree-item {
+    cursor: pointer;
+  }
+
+  .empty-folder {
+    padding-left: 32px;
+    color: #999;
+    font-style: italic;
+    font-size: 14px;
+  }
+
+  .empty-message {
+    color: #999;
+    font-style: italic;
+    padding: 30px;
+    text-align: center;
+    border: 1px dashed var(--border-color);
+    border-radius: 6px;
+    margin-top: 20px;
+    background-color: #fafafa;
+  }
+
+  .path-info {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 15px;
+    padding: 8px 12px;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+    border-left: 3px solid #4CAF50;
+  }
+
+  @media (max-width: 768px) {
+    .wiki-tree {
+      padding: 10px;
+    }
+
+    .tree ul {
+      padding-left: 20px;
+    }
+
+    .tree-item {
+      padding: 6px 8px;
+    }
   }
 </style>
