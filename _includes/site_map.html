@@ -1,399 +1,395 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wiki文档目录</title>
-    <style>
-        :root {
-            --folder-open-color: #ff9800;
-            --folder-closed-color: #ffb74d;
-            --file-color: #78909c;
-            --hover-color: #f5f5f5;
-            --border-color: #e0e0e0;
-            --text-color: #333;
-            --light-text: #666;
-        }
-        
-        .wiki-tree {
-            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        .wiki-tree h2 {
-            color: var(--text-color);
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .tree {
-            list-style: none;
-            padding-left: 0;
-            margin: 0;
-        }
-        
-        .tree ul {
-            list-style: none;
-            padding-left: 24px;
-            margin: 0;
-        }
-        
-        .tree li {
-            margin: 4px 0;
-            position: relative;
-        }
-        
-        .tree-item {
-            display: flex;
-            align-items: center;
-            padding: 8px 12px;
-            border-radius: 4px;
-            transition: background-color 0.2s;
-        }
-        
-        .tree-item:hover {
-            background-color: var(--hover-color);
-        }
-        
-        .icon {
-            margin-right: 10px;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-        }
-        
-        .folder-icon {
-            color: var(--folder-closed-color);
-            position: relative;
-        }
-        
-        .folder-icon::before {
-            content: "📁"; /* 默认关闭状态 */
-        }
-        
-        .folder-icon.open::before {
-            content: "📂"; /* 打开状态 */
-        }
-        
-        details[open] > summary > .tree-item > .folder-icon::before {
-            content: "📂" !important; /* 打开状态 */
-        }
-        
-        details:not([open]) > summary > .tree-item > .folder-icon::before {
-            content: "📁" !important; /* 关闭状态 */
-        }
-        
-        .file-icon {
-            color: var(--file-color);
-            font-size: 16px;
-        }
-        
-        .folder-name, .file-name {
-            color: var(--text-color);
-            font-size: 15px;
-        }
-        
-        .file-name {
-            color: var(--light-text);
-        }
-        
-        .file-link {
-            text-decoration: none;
-            color: inherit;
-            display: flex;
-            align-items: center;
-            flex-grow: 1;
-        }
-        
-        .file-link:hover .file-name {
-            text-decoration: underline;
-            color: #1976d2;
-        }
-        
-        summary {
-            display: block;
-            cursor: pointer;
-            list-style: none;
-        }
-        
-        summary::-webkit-details-marker {
-            display: none;
-        }
-        
-        summary::marker {
-            display: none;
-        }
-        
-        summary .tree-item {
-            cursor: pointer;
-        }
-        
-        .empty-folder {
-            padding-left: 32px;
-            color: #999;
-            font-style: italic;
-            font-size: 14px;
-        }
-        
-        .empty-message {
-            color: #999;
-            font-style: italic;
-            padding: 30px;
-            text-align: center;
-            border: 1px dashed var(--border-color);
-            border-radius: 6px;
-            margin-top: 20px;
-            background-color: #fafafa;
-        }
-        
-        .path-info {
-            font-size: 13px;
-            color: #888;
-            margin-bottom: 15px;
-            padding: 8px 12px;
-            background-color: #f9f9f9;
-            border-radius: 4px;
-            border-left: 3px solid #4CAF50;
-        }
-        
-        @media (max-width: 768px) {
-            .wiki-tree {
-                padding: 10px;
-            }
-            
-            .tree ul {
-                padding-left: 20px;
-            }
-            
-            .tree-item {
-                padding: 6px 8px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="wiki-tree">
-        <h2>📚 Wiki文档目录</h2>
-        
-        {% comment %}
-        配置部分
-        {% endcomment %}
-        {% assign wiki_prefix = "wiki/" %}
-        
-        {% comment %}
-        获取所有wiki页面并按路径排序
-        {% endcomment %}
-        {% assign all_wiki_pages = site.pages | where_exp: "page", "page.path contains wiki_prefix" | sort: "path" %}
-        
-        <div class="path-info">
-            共找到 <strong>{{ all_wiki_pages.size }}</strong> 个文档
-        </div>
-        
-        {% if all_wiki_pages.size > 0 %}
-            {% comment %}
-            收集所有目录和文件
-            {% endcomment %}
-            {% assign directories = "" | split: "," %}
-            {% assign root_files = "" | split: "," %}
-            
-            {% comment %}
-            先处理所有页面，构建目录结构
-            {% endcomment %}
-            {% for page in all_wiki_pages %}
-                {% assign clean_path = page.path | remove: wiki_prefix %}
-                {% assign clean_path = clean_path | split: "." | first %}
-                {% assign path_parts = clean_path | split: "/" %}
-                
-                {% if path_parts.size == 1 %}
-                    {% comment %}
-                    根目录文件
-                    {% endcomment %}
-                    {% assign root_files = root_files | push: page %}
-                {% else %}
-                    {% comment %}
-                    子目录文件
-                    {% endcomment %}
-                    {% assign dir_name = path_parts[0] %}
-                    {% assign filename = path_parts[1] %}
-                    
-                    {% comment %}
-                    检查是否已经记录了这个目录
-                    {% endcomment %}
-                    {% assign dir_exists = false %}
-                    {% assign dir_index = -1 %}
-                    
-                    {% for i in (0..directories.size) %}
-                        {% if i < directories.size %}
-                            {% assign dir_data = directories[i] | split: "|" %}
-                            {% if dir_data[0] == dir_name %}
-                                {% assign dir_exists = true %}
-                                {% assign dir_index = i %}
-                                {% break %}
-                            {% endif %}
-                        {% endif %}
-                    {% endfor %}
-                    
-                    {% if dir_exists %}
-                        {% comment %}
-                        更新现有目录
-                        {% endcomment %}
-                        {% assign dir_data = directories[dir_index] | split: "|" %}
-                        {% assign dir_files = dir_data[1] %}
-                        
-                        {% comment %}
-                        检查文件是否已存在
-                        {% endcomment %}
-                        {% assign file_exists = false %}
-                        {% for file_item in dir_files %}
-                            {% if file_item contains filename %}
-                                {% assign file_exists = true %}
-                                {% break %}
-                            {% endif %}
-                        {% endfor %}
-                        
-                        {% unless file_exists %}
-                            {% assign dir_files = dir_files | append: "," | append: filename | append: ":" | append: page.url %}
-                            {% assign dir_data = dir_name | append: "|" | append: dir_files %}
-                            {% assign directories = directories | slice: 0, dir_index | concat: dir_data | concat: directories | slice: dir_index | shift %}
-                        {% endunless %}
-                    {% else %}
-                        {% comment %}
-                        创建新目录
-                        {% endcomment %}
-                        {% assign dir_files = filename | append: ":" | append: page.url %}
-                        {% assign dir_data = dir_name | append: "|" | append: dir_files %}
-                        {% assign directories = directories | push: dir_data %}
-                    {% endif %}
-                {% endif %}
-            {% endfor %}
-            
-            {% comment %}
-            渲染树形结构 - 简化版本
-            {% endcomment %}
-            <ul class="tree">
-                {% comment %}
-                显示根目录文件
-                {% endcomment %}
-                {% for page in root_files %}
-                    {% assign clean_path = page.path | remove: wiki_prefix %}
-                    {% assign clean_path = clean_path | split: "." | first %}
-                    {% assign path_parts = clean_path | split: "/" %}
-                    
-                    <li>
-                        <div class="tree-item">
-                            <div class="icon file-icon">📄</div>
-                            <a href="{{ page.url | relative_url }}" class="file-link">
-                                <span class="file-name">{{ path_parts[0] }}</span>
-                            </a>
-                        </div>
-                    </li>
-                {% endfor %}
-                
-                {% comment %}
-                显示目录
-                {% endcomment %}
-                {% for dir_item in directories %}
-                    {% assign dir_data = dir_item | split: "|" %}
-                    {% assign dir_name = dir_data[0] %}
-                    {% assign dir_files_str = dir_data[1] %}
-                    
-                    {% comment %}
-                    解析目录文件
-                    {% endcomment %}
-                    {% assign dir_files = dir_files_str | split: "," %}
-                    {% assign file_count = dir_files.size %}
-                    
-                    <li>
-                        <details {% if file_count > 0 %}open{% endif %}>
-                            <summary>
-                                <div class="tree-item">
-                                    <div class="icon folder-icon"></div>
-                                    <span class="folder-name">{{ dir_name }}</span>
-                                    {% if file_count > 0 %}
-                                        <span style="margin-left: 8px; color: #999; font-size: 13px;">
-                                            ({{ file_count }} 个文件)
-                                        </span>
-                                    {% endif %}
-                                </div>
-                            </summary>
-                            
-                            {% if file_count > 0 %}
-                                <ul>
-                                    {% for file_item in dir_files %}
-                                        {% assign file_data = file_item | split: ":" %}
-                                        {% assign filename = file_data[0] %}
-                                        {% assign file_url = file_data[1] %}
-                                        
-                                        <li>
-                                            <div class="tree-item">
-                                                <div class="icon file-icon">📄</div>
-                                                <a href="{{ file_url | relative_url }}" class="file-link">
-                                                    <span class="file-name">{{ filename }}</span>
-                                                </a>
-                                            </div>
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            {% else %}
-                                <div class="empty-folder">空文件夹</div>
-                            {% endif %}
-                        </details>
-                    </li>
-                {% endfor %}
-            </ul>
-            
-        {% else %}
-            <div class="empty-message">
-                未找到Wiki文档。
+<style>
+  :root {
+    --folder-open-color: #ff9800;
+    --folder-closed-color: #ffb74d;
+    --file-color: #78909c;
+    --hover-color: #f5f5f5;
+    --border-color: #e0e0e0;
+    --text-color: #333;
+    --light-text: #666;
+  }
+
+  .wiki-tree {
+    font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  .wiki-tree h2 {
+    color: var(--text-color);
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+  }
+
+  .tree {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+  }
+
+  .tree ul {
+    list-style: none;
+    padding-left: 24px;
+    margin: 0;
+  }
+
+  .tree li {
+    margin: 4px 0;
+    position: relative;
+  }
+
+  .tree-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+  }
+
+  .tree-item:hover {
+    background-color: var(--hover-color);
+  }
+
+  .icon {
+    margin-right: 10px;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .folder-icon {
+    color: var(--folder-closed-color);
+  }
+
+  details[open]>summary>.tree-item>.folder-icon {
+    color: var(--folder-open-color);
+  }
+
+  .file-icon {
+    color: var(--file-color);
+    font-size: 16px;
+  }
+
+  .folder-name,
+  .file-name {
+    color: var(--text-color);
+    font-size: 15px;
+  }
+
+  .file-name {
+    color: var(--light-text);
+  }
+
+  .file-link {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+  }
+
+  .file-link:hover .file-name {
+    text-decoration: underline;
+    color: #1976d2;
+  }
+
+  summary {
+    display: block;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary::marker {
+    display: none;
+  }
+
+  .empty-folder {
+    padding-left: 32px;
+    color: #999;
+    font-style: italic;
+    font-size: 14px;
+  }
+
+  .empty-message {
+    color: #999;
+    font-style: italic;
+    padding: 30px;
+    text-align: center;
+    border: 1px dashed var(--border-color);
+    border-radius: 6px;
+    margin-top: 20px;
+    background-color: #fafafa;
+  }
+
+  .path-info {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 15px;
+    padding: 8px 12px;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+    border-left: 3px solid #4CAF50;
+  }
+
+  @media (max-width: 768px) {
+    .wiki-tree {
+      padding: 10px;
+    }
+
+    .tree ul {
+      padding-left: 20px;
+    }
+
+    .tree-item {
+      padding: 6px 8px;
+    }
+  }
+</style>
+
+<div class="wiki-tree">
+  <h2>📚 Wiki文档目录</h2>
+
+  {% comment %}
+  配置部分
+  {% endcomment %}
+  {% assign wiki_prefix = "wiki/" %}
+
+  {% comment %}
+  获取所有wiki页面
+  {% endcomment %}
+  {% assign all_wiki_pages = site.pages | where_exp: "page", "page.path contains wiki_prefix" | sort: "path" %}
+
+  <div class="path-info">
+    共找到 <strong>{{ all_wiki_pages.size }}</strong> 个文档
+  </div>
+
+  {% if all_wiki_pages.size > 0 %}
+  {% comment %}
+  使用最简单直接的方法构建目录
+  {% endcomment %}
+
+  {% comment %}
+  收集根目录文件
+  {% endcomment %}
+  {% assign root_files = "" | split: "" %}
+
+  {% for page in all_wiki_pages %}
+  {% assign clean_path = page.path | remove: wiki_prefix %}
+  {% assign clean_path = clean_path | split: "." | first %}
+  {% assign path_parts = clean_path | split: "/" %}
+
+  {% if path_parts.size == 1 %}
+  {% assign root_files = root_files | push: page %}
+  {% endif %}
+  {% endfor %}
+
+  {% comment %}
+  收集目录结构
+  {% endcomment %}
+  {% assign dir_structure = "" %}
+
+  {% for page in all_wiki_pages %}
+  {% assign clean_path = page.path | remove: wiki_prefix %}
+  {% assign clean_path = clean_path | split: "." | first %}
+  {% assign path_parts = clean_path | split: "/" %}
+
+  {% if path_parts.size > 1 %}
+  {% assign dir_name = path_parts[0] %}
+  {% assign filename = path_parts[1] %}
+
+  {% comment %}
+  添加到目录结构字符串
+  {% endcomment %}
+  {% assign dir_key = "dir:" | append: dir_name | append: ":" %}
+  {% assign file_entry = filename | append: "=" | append: page.url %}
+
+  {% unless dir_structure contains dir_key %}
+  {% assign dir_structure = dir_structure | append: dir_key | append: file_entry | append: ";" %}
+  {% else %}
+  {% comment %}
+  提取现有的目录条目并添加新文件
+  {% endcomment %}
+  {% assign dir_start = dir_structure | split: dir_key | first | size %}
+  {% assign dir_end = dir_structure | slice: dir_start, dir_structure.size | split: ";" | first | size %}
+  {% assign dir_content = dir_structure | slice: dir_start, dir_end %}
+  {% assign dir_content = dir_content | remove: dir_key %}
+
+  {% comment %}
+  检查文件是否已存在
+  {% endcomment %}
+  {% unless dir_content contains file_entry %}
+  {% assign dir_content = dir_content | append: file_entry | append: ";" %}
+  {% assign dir_structure = dir_structure | replace: dir_key, "" %}
+  {% assign dir_structure = dir_structure | append: dir_key | append: dir_content %}
+  {% endunless %}
+  {% endunless %}
+  {% endif %}
+  {% endfor %}
+
+  {% comment %}
+  渲染树形结构
+  {% endcomment %}
+  <ul class="tree">
+    {% comment %}
+    显示根目录文件
+    {% endcomment %}
+    {% for page in root_files %}
+    {% assign clean_path = page.path | remove: wiki_prefix %}
+    {% assign clean_path = clean_path | split: "." | first %}
+    {% assign path_parts = clean_path | split: "/" %}
+
+    <li>
+      <div class="tree-item">
+        <div class="icon file-icon">📄</div>
+        <a href="{{ page.url | relative_url }}" class="file-link">
+          <span class="file-name">{{ path_parts[0] }}</span>
+        </a>
+      </div>
+    </li>
+    {% endfor %}
+
+    {% comment %}
+    解析并显示目录
+    {% endcomment %}
+    {% if dir_structure != "" %}
+    {% assign dir_entries = dir_structure | split: ";" %}
+
+    {% for entry in dir_entries %}
+    {% if entry != "" and entry contains "dir:" %}
+    {% assign dir_data = entry | remove: "dir:" %}
+    {% assign dir_parts = dir_data | split: ":" %}
+    {% assign dir_name = dir_parts[0] %}
+    {% assign files_str = dir_parts[1] %}
+
+    {% if files_str %}
+    {% assign files_list = files_str | split: ";" %}
+    {% assign file_count = 0 %}
+
+    {% comment %}
+    计算实际文件数量
+    {% endcomment %}
+    {% for file_item in files_list %}
+    {% if file_item != "" %}
+    {% assign file_count = file_count | plus: 1 %}
+    {% endif %}
+    {% endfor %}
+
+    <li>
+      <details {% if file_count> 0 %}open{% endif %}>
+        <summary>
+          <div class="tree-item">
+            <div class="icon folder-icon">
+              {% if file_count > 0 %}
+              <span class="folder-open">📂</span>
+              <span class="folder-closed" style="display: none;">📁</span>
+              {% else %}
+              📁
+              {% endif %}
             </div>
+            <span class="folder-name">{{ dir_name }}</span>
+            {% if file_count > 0 %}
+            <span style="margin-left: 8px; color: #999; font-size: 13px;">
+              ({{ file_count }} 个文件)
+            </span>
+            {% endif %}
+          </div>
+        </summary>
+
+        {% if file_count > 0 %}
+        <ul>
+          {% for file_item in files_list %}
+          {% if file_item != "" %}
+          {% assign file_data = file_item | split: "=" %}
+          {% assign filename = file_data[0] %}
+          {% assign file_url = file_data[1] %}
+
+          <li>
+            <div class="tree-item">
+              <div class="icon file-icon">📄</div>
+              <a href="{{ file_url }}" class="file-link">
+                <span class="file-name">{{ filename }}</span>
+              </a>
+            </div>
+          </li>
+          {% endif %}
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div class="empty-folder">空文件夹</div>
         {% endif %}
-        
-        <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid var(--border-color); font-size: 13px; color: #777; text-align: center;">
-            最后更新: {{ site.time | date: "%Y-%m-%d %H:%M" }} | 
-            支持多级目录结构
-        </div>
-        
-        <script>
-            // 确保文件夹图标正确显示
-            document.addEventListener('DOMContentLoaded', function() {
-                // 监听details元素的toggle事件
-                const detailsElements = document.querySelectorAll('details');
-                
-                detailsElements.forEach(detail => {
-                    detail.addEventListener('toggle', function() {
-                        // 重新应用样式以确保图标正确显示
-                        const icon = this.querySelector('.folder-icon');
-                        if (icon) {
-                            // 移除现有类
-                            icon.classList.remove('open');
-                            
-                            // 根据状态添加类
-                            if (this.open) {
-                                icon.classList.add('open');
-                            }
-                        }
-                    });
-                });
-                
-                // 初始设置图标状态
-                detailsElements.forEach(detail => {
-                    const icon = detail.querySelector('.folder-icon');
-                    if (icon) {
-                        if (detail.open) {
-                            icon.classList.add('open');
-                        } else {
-                            icon.classList.remove('open');
-                        }
-                    }
-                });
-            });
-        </script>
-    </div>
-</body>
-</html>
+      </details>
+    </li>
+    {% endif %}
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+  </ul>
+
+  {% else %}
+  <div class="empty-message">
+    未找到Wiki文档。
+  </div>
+  {% endif %}
+
+  <div
+    style="margin-top: 30px; padding-top: 15px; border-top: 1px solid var(--border-color); font-size: 13px; color: #777; text-align: center;">
+    最后更新: {{ site.time | date: "%Y-%m-%d %H:%M" }}
+  </div>
+
+  <script>
+    // 简单的JavaScript来处理文件夹图标切换
+    document.addEventListener('DOMContentLoaded', function () {
+      // 为所有details元素添加toggle事件监听器
+      const detailsElements = document.querySelectorAll('details');
+
+      detailsElements.forEach(function (detail) {
+        // 初始设置图标
+        updateFolderIcon(detail);
+
+        // 添加toggle事件监听
+        detail.addEventListener('toggle', function () {
+          updateFolderIcon(this);
+        });
+      });
+
+      function updateFolderIcon(detailElement) {
+        const iconElement = detailElement.querySelector('.folder-icon');
+        if (!iconElement) return;
+
+        const openIcon = iconElement.querySelector('.folder-open');
+        const closedIcon = iconElement.querySelector('.folder-closed');
+
+        if (openIcon && closedIcon) {
+          if (detailElement.open) {
+            openIcon.style.display = 'inline';
+            closedIcon.style.display = 'none';
+          } else {
+            openIcon.style.display = 'none';
+            closedIcon.style.display = 'inline';
+          }
+        } else {
+          // 如果没有子元素，直接设置文本内容
+          if (detailElement.open) {
+            iconElement.textContent = '📂';
+          } else {
+            iconElement.textContent = '📁';
+          }
+        }
+      }
+
+      // 初始更新所有图标
+      detailsElements.forEach(function (detail) {
+        updateFolderIcon(detail);
+      });
+    });
+  </script>
+</div>
