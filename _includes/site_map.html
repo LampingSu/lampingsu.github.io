@@ -156,6 +156,17 @@
       padding: 6px 8px;
     }
   }
+
+  /* 文件夹图标切换样式 */
+  details>.tree-item>.folder-icon::before {
+    content: "📁";
+    /* 默认关闭状态 */
+  }
+
+  details[open]>.tree-item>.folder-icon::before {
+    content: "📂";
+    /* 打开状态 */
+  }
 </style>
 
 <div class="wiki-tree">
@@ -167,7 +178,7 @@
   {% assign wiki_prefix = "wiki/" %}
 
   {% comment %}
-  获取所有wiki页面
+  获取所有wiki页面并按路径排序
   {% endcomment %}
   {% assign all_wiki_pages = site.pages | where_exp: "page", "page.path contains wiki_prefix" | sort: "path" %}
 
@@ -177,75 +188,104 @@
 
   {% if all_wiki_pages.size > 0 %}
   {% comment %}
-  使用更简单但可靠的方法：按路径分组
+  使用新的算法：构建目录树哈希表
   {% endcomment %}
 
   {% comment %}
-  第一步：收集所有目录路径
+  第一步：构建目录树结构
   {% endcomment %}
-  {% assign all_dirs = "" | split: "," %}
+
+  {% comment %}
+  初始化根节点
+  {% endcomment %}
+  {% assign root = "" | split: "," %}
 
   {% for page in all_wiki_pages %}
+  {% comment %}
+  处理页面路径
+  {% endcomment %}
   {% assign clean_path = page.path | remove: wiki_prefix %}
   {% assign clean_path = clean_path | split: "." | first %}
   {% assign path_parts = clean_path | split: "/" %}
 
-  {% comment %}
-  对于多层路径，收集所有可能的目录
-  {% endcomment %}
-  {% assign current_dir = "" %}
+  {% assign current_node = root %}
+  {% assign current_path = "" %}
+
   {% for i in (0..path_parts.size) %}
-  {% if i < path_parts.size %} {% if current_dir=="" %} {% assign current_dir=path_parts[i] %} {% else %} {% assign
-    current_dir=current_dir | append: "/" | append: path_parts[i] %} {% endif %} {% unless i==path_parts.size | minus: 1
-    %} {% unless all_dirs contains current_dir %} {% assign all_dirs=all_dirs | push: current_dir %} {% endunless %} {%
-    endunless %} {% endif %} {% endfor %} {% endfor %} {% comment %} 按目录层级排序 {% endcomment %} {% assign
-    sorted_dirs=all_dirs | sort %} {% comment %} 第二步：按目录层级构建树 {% endcomment %} <ul class="tree">
+  {% if i < path_parts.size %} {% assign part=path_parts[i] %} {% assign is_last=i==path_parts.size | minus: 1 %} {% if
+    current_path=="" %} {% assign current_path=part %} {% else %} {% assign current_path=current_path | append: "/" |
+    append: part %} {% endif %} {% comment %} 在当前节点中查找或创建子节点 {% endcomment %} {% assign node_found=false %} {% for node
+    in current_node %} {% if node.name==part %} {% comment %} 找到现有节点 {% endcomment %} {% assign
+    current_node=node.children %} {% assign node_found=true %} {% comment %} 如果是最后一个部分（文件），更新页面信息 {% endcomment %} {% if
+    is_last %} {% assign node.page=page %} {% assign node.is_file=true %} {% endif %} {% break %} {% endif %} {% endfor
+    %} {% unless node_found %} {% comment %} 创建新节点 {% endcomment %} {% assign new_node="" | split: "," %} {% assign
+    new_node=new_node | push: "name:" | append: part %} {% assign new_node=new_node | push: "is_file:" | append: is_last
+    %} {% if is_last %} {% assign new_node=new_node | push: "page:" | append: page.url %} {% endif %} {% assign
+    new_node=new_node | push: "children:" | split: "," %} {% assign new_node_children="" | split: "," %} {% comment %}
+    将新节点添加到当前节点 {% endcomment %} {% assign current_node=current_node | push: new_node %} {% comment %}
+    由于Liquid的限制，我们无法直接操作复杂对象 改用简单的方法：按路径分组 {% endcomment %} {% endunless %} {% endif %} {% endfor %} {% endfor %} {%
+    comment %} 由于Liquid处理复杂树结构困难，改用简单直接的方法 {% endcomment %} {% comment %} 收集所有目录 {% endcomment %} {% assign dirs_hash=""
+    | split: "," %} {% for page in all_wiki_pages %} {% assign clean_path=page.path | remove: wiki_prefix %} {% assign
+    clean_path=clean_path | split: "." | first %} {% assign path_parts=clean_path | split: "/" %} {% if path_parts.size>
+    1 %}
     {% comment %}
-    首先显示根目录下的文件
+    提取目录路径
     {% endcomment %}
-    {% for page in all_wiki_pages %}
-    {% assign clean_path = page.path | remove: wiki_prefix %}
-    {% assign clean_path = clean_path | split: "." | first %}
-    {% assign path_parts = clean_path | split: "/" %}
-
-    {% if path_parts.size == 1 %}
-    <li>
-      <div class="tree-item">
-        <div class="icon file-icon">📄</div>
-        <a href="{{ page.url | relative_url }}" class="file-link">
-          <span class="file-name">{{ path_parts[0] }}</span>
-        </a>
-      </div>
-    </li>
-    {% endif %}
-    {% endfor %}
-
-    {% comment %}
-    现在显示目录
-    {% endcomment %}
-    {% assign processed_dirs = "" | split: "," %}
-
-    {% for dir in sorted_dirs %}
-    {% assign dir_parts = dir | split: "/" %}
-    {% assign depth = dir_parts.size %}
-
-    {% comment %}
-    检查是否已经处理过父目录
-    {% endcomment %}
-    {% if depth == 1 %}
-    {% assign parent_dir = "" %}
+    {% assign dir_path = "" %}
+    {% for i in (0..path_parts.size-2) %}
+    {% if dir_path == "" %}
+    {% assign dir_path = path_parts[i] %}
     {% else %}
-    {% assign parent_dir_parts = "" | split: "," %}
-    {% for i in (0..depth-2) %}
-    {% assign parent_dir_parts = parent_dir_parts | push: dir_parts[i] %}
-    {% endfor %}
-    {% assign parent_dir = parent_dir_parts | join: "/" %}
+    {% assign dir_path = dir_path | append: "/" | append: path_parts[i] %}
     {% endif %}
+    {% endfor %}
 
     {% comment %}
-    如果父目录已经被处理，或者这是第一级目录
+    添加到目录哈希
     {% endcomment %}
-    {% if depth == 1 or processed_dirs contains parent_dir %}
+    {% assign dir_key = "dir:" | append: dir_path %}
+    {% assign file_key = "file:" | append: clean_path %}
+
+    {% unless dirs_hash contains dir_key %}
+    {% assign dirs_hash = dirs_hash | push: dir_key %}
+    {% endunless %}
+
+    {% unless dirs_hash contains file_key %}
+    {% assign dirs_hash = dirs_hash | push: file_key %}
+    {% endunless %}
+    {% else %}
+    {% comment %}
+    根目录文件
+    {% endcomment %}
+    {% assign file_key = "file:" | append: clean_path %}
+    {% unless dirs_hash contains file_key %}
+    {% assign dirs_hash = dirs_hash | push: file_key %}
+    {% endunless %}
+    {% endif %}
+    {% endfor %}
+
+    {% comment %}
+    按类型和路径排序
+    {% endcomment %}
+    {% assign sorted_items = dirs_hash | sort %}
+
+    {% comment %}
+    重新组织数据：收集目录和文件
+    {% endcomment %}
+    {% assign directories = "" | split: "," %}
+    {% assign root_files = "" | split: "," %}
+
+    {% for item in sorted_items %}
+    {% if item contains "dir:" %}
+    {% assign dir_path = item | remove: "dir:" %}
+    {% assign dir_parts = dir_path | split: "/" %}
+
+    {% comment %}
+    只添加第一级目录（支持多层目录的扩展）
+    {% endcomment %}
+    {% if dir_parts.size == 1 %}
+    {% assign dir_name = dir_parts[0] %}
+
     {% comment %}
     收集此目录下的文件
     {% endcomment %}
@@ -254,72 +294,106 @@
     {% for page in all_wiki_pages %}
     {% assign clean_path = page.path | remove: wiki_prefix %}
     {% assign clean_path = clean_path | split: "." | first %}
+    {% assign path_parts = clean_path | split: "/" %}
 
-    {% if clean_path contains dir and clean_path != dir %}
-    {% assign test_path = clean_path | append: "/" %}
-    {% assign test_dir = dir | append: "/" %}
-
-    {% if test_path contains test_dir %}
-    {% assign remaining = clean_path | remove_first: dir | remove_first: "/" %}
-    {% assign remaining_parts = remaining | split: "/" %}
-
-    {% if remaining_parts.size == 1 %}
+    {% if path_parts.size > 1 and path_parts[0] == dir_name %}
     {% assign dir_files = dir_files | push: page %}
     {% endif %}
-    {% endif %}
-    {% endif %}
     {% endfor %}
 
-    <li>
-      <details {% if dir_files.size> 0 %}open{% endif %}>
-        <summary>
-          <div class="tree-item">
-            <div class="icon folder-icon">
-              {% if dir_files.size > 0 %}
-              📂
-              {% else %}
-              📁
-              {% endif %}
-            </div>
-            <span class="folder-name">{{ dir_parts | last }}</span>
-            {% if dir_files.size > 0 %}
-            <span style="margin-left: 8px; color: #999; font-size: 13px;">
-              ({{ dir_files.size }} 个文件)
-            </span>
-            {% endif %}
-          </div>
-        </summary>
-
-        {% if dir_files.size > 0 %}
-        <ul>
-          {% for page in dir_files %}
-          {% assign clean_path = page.path | remove: wiki_prefix %}
-          {% assign clean_path = clean_path | split: "." | first %}
-          {% assign path_parts = clean_path | split: "/" %}
-          {% assign filename = path_parts | last %}
-
-          <li>
-            <div class="tree-item">
-              <div class="icon file-icon">📄</div>
-              <a href="{{ page.url | relative_url }}" class="file-link">
-                <span class="file-name">{{ filename }}</span>
-              </a>
-            </div>
-          </li>
-          {% endfor %}
-        </ul>
-        {% else %}
-        <div class="empty-folder">空文件夹</div>
-        {% endif %}
-      </details>
-    </li>
+    {% assign dir_data = "" | split: "," %}
+    {% assign dir_data = dir_data | push: dir_name %}
+    {% assign dir_data = dir_data | push: dir_files %}
+    {% assign directories = directories | push: dir_data %}
+    {% endif %}
+    {% elsif item contains "file:" %}
+    {% assign file_path = item | remove: "file:" %}
+    {% assign path_parts = file_path | split: "/" %}
 
     {% comment %}
-    标记此目录为已处理
+    根目录文件
     {% endcomment %}
-    {% assign processed_dirs = processed_dirs | push: dir %}
+    {% if path_parts.size == 1 %}
+    {% for page in all_wiki_pages %}
+    {% assign clean_path = page.path | remove: wiki_prefix %}
+    {% assign clean_path = clean_path | split: "." | first %}
+
+    {% if clean_path == file_path %}
+    {% assign root_files = root_files | push: page %}
+    {% break %}
     {% endif %}
     {% endfor %}
+    {% endif %}
+    {% endif %}
+    {% endfor %}
+
+    {% comment %}
+    渲染树形结构
+    {% endcomment %}
+    <ul class="tree">
+      {% comment %}
+      显示根目录文件
+      {% endcomment %}
+      {% for page in root_files %}
+      {% assign clean_path = page.path | remove: wiki_prefix %}
+      {% assign clean_path = clean_path | split: "." | first %}
+      {% assign path_parts = clean_path | split: "/" %}
+
+      <li>
+        <div class="tree-item">
+          <div class="icon file-icon">📄</div>
+          <a href="{{ page.url | relative_url }}" class="file-link">
+            <span class="file-name">{{ path_parts[0] }}</span>
+          </a>
+        </div>
+      </li>
+      {% endfor %}
+
+      {% comment %}
+      显示目录
+      {% endcomment %}
+      {% for dir_data in directories %}
+      {% assign dir_name = dir_data[0] %}
+      {% assign dir_files = dir_data[1] %}
+
+      <li>
+        <details {% if dir_files.size> 0 %}open{% endif %}>
+          <summary>
+            <div class="tree-item">
+              <div class="icon folder-icon"></div>
+              <span class="folder-name">{{ dir_name }}</span>
+              {% if dir_files.size > 0 %}
+              <span style="margin-left: 8px; color: #999; font-size: 13px;">
+                ({{ dir_files.size }} 个文件)
+              </span>
+              {% endif %}
+            </div>
+          </summary>
+
+          {% if dir_files.size > 0 %}
+          <ul>
+            {% for page in dir_files %}
+            {% assign clean_path = page.path | remove: wiki_prefix %}
+            {% assign clean_path = clean_path | split: "." | first %}
+            {% assign path_parts = clean_path | split: "/" %}
+            {% assign filename = path_parts[1] %}
+
+            <li>
+              <div class="tree-item">
+                <div class="icon file-icon">📄</div>
+                <a href="{{ page.url | relative_url }}" class="file-link">
+                  <span class="file-name">{{ filename }}</span>
+                </a>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <div class="empty-folder">空文件夹</div>
+          {% endif %}
+        </details>
+      </li>
+      {% endfor %}
     </ul>
 
     {% else %}
