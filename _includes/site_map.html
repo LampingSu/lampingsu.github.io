@@ -1,220 +1,5 @@
-<div class="wiki-tree">
-  📚 Wiki目录
-
-  {% comment %} 配置部分：根据您的实际目录结构修改这些变量 {% endcomment %}
-  {% assign wiki_folder = "wiki" %} {% comment %} 您的wiki文件夹名称 {% endcomment %}
-  {% assign wiki_prefix = "wiki/" %} {% comment %} 页面路径中的前缀 {% endcomment %}
-
-  <div class="path-info">
-    文档路径: <code>/{{ wiki_folder }}/</code> | 共找到 <strong>{{ site.pages | where_exp: "page", "page.path contains
-      wiki_prefix" | size }}</strong> 个文档
-  </div>
-
-  {% comment %} 获取所有wiki页面 {% endcomment %}
-  {% assign all_wiki_pages = site.pages | where_exp: "page", "page.path contains wiki_prefix" %}
-
-  {% if all_wiki_pages.size > 0 %}
-  {% comment %} 创建路径树数据结构 {% endcomment %}
-  {% assign path_tree = "" | split: "" %}
-
-  {% for page in all_wiki_pages %}
-  {% comment %} 处理页面路径，移除前缀和扩展名 {% endcomment %}
-  {% assign clean_path = page.path | remove: wiki_prefix %}
-  {% assign clean_path = clean_path | remove: ".md" | remove: ".html" | remove: ".markdown" %}
-
-  {% comment %} 将路径分割为部分 {% endcomment %}
-  {% assign path_parts = clean_path | split: "/" %}
-
-  {% comment %} 将页面添加到树结构中 {% endcomment %}
-  {% assign current_level = path_tree %}
-
-  {% for part in path_parts %}
-  {% assign part_name = part %}
-  {% assign is_last = forloop.last %}
-
-  {% comment %} 在当前层级查找是否已存在此部分 {% endcomment %}
-  {% assign existing_node = nil %}
-  {% for node in current_level %}
-  {% if node.name == part_name %}
-  {% assign existing_node = node %}
-  {% break %}
-  {% endif %}
-  {% endfor %}
-
-  {% if existing_node %}
-  {% comment %} 如果节点已存在，进入下一层 {% endcomment %}
-  {% assign current_level = existing_node.children %}
-  {% else %}
-  {% comment %} 如果节点不存在，创建新节点 {% endcomment %}
-  {% assign new_node_name = part_name %}
-  {% assign new_node_is_file = is_last %}
-  {% assign new_node_page = page %}
-  {% assign new_node_children = "" | split: "" %}
-
-  {% assign node_data = "" | split: "" %}
-  {% assign node_data = node_data | push: new_node_name %}
-  {% assign node_data = node_data | push: new_node_is_file %}
-  {% assign node_data = node_data | push: new_node_page %}
-  {% assign node_data = node_data | push: new_node_children %}
-
-  {% assign current_level = current_level | push: node_data %}
-
-  {% comment %} 获取新添加的节点引用 {% endcomment %}
-  {% for node in current_level %}
-  {% if node[0] == part_name %}
-  {% assign current_level = node[3] %}
-  {% break %}
-  {% endif %}
-  {% endfor %}
-  {% endif %}
-  {% endfor %}
-  {% endfor %}
-
-  {% comment %} 递归渲染树形结构的函数。由于Liquid不支持递归函数，我们使用嵌套循环处理有限深度的结构 {% endcomment %}
-  {% if path_tree.size > 0 %}
-  <ul class="tree">
-    {% for node in path_tree %}
-    {% assign node_name = node[0] %}
-    {% assign node_is_file = node[1] %}
-    {% assign node_page = node[2] %}
-    {% assign node_children = node[3] %}
-
-    <li>
-      {% if node_is_file %}
-      {% comment %} 文件项 {% endcomment %}
-      <div class="tree-item">
-        <div class="icon file-icon">📄</div>
-        <a href="{{ node_page.url | relative_url }}" class="file-link">
-          <span class="file-name">{{ node_name }}</span>
-        </a>
-      </div>
-      {% else %}
-      {% comment %} 文件夹项 {% endcomment %}
-      <details {% if node_children.size> 0 %}open{% endif %}>
-        <summary>
-          <div class="tree-item">
-            <div class="icon folder-icon">
-              {% if node_children.size > 0 %}
-              📂
-              {% else %}
-              📁
-              {% endif %}
-            </div>
-            <span class="folder-name">{{ node_name }}</span>
-          </div>
-        </summary>
-
-        {% if node_children.size > 0 %}
-        <ul>
-          {% for child_node in node_children %}
-          {% assign child_name = child_node[0] %}
-          {% assign child_is_file = child_node[1] %}
-          {% assign child_page = child_node[2] %}
-          {% assign child_children = child_node[3] %}
-
-          <li>
-            {% if child_is_file %}
-            {% comment %} 第二级文件项 {% endcomment %}
-            <div class="tree-item">
-              <div class="icon file-icon">📄</div>
-              <a href="{{ child_page.url | relative_url }}" class="file-link">
-                <span class="file-name">{{ child_name }}</span>
-              </a>
-            </div>
-            {% else %}
-            {% comment %} 第二级文件夹项 {% endcomment %}
-            <details {% if child_children.size> 0 %}open{% endif %}>
-              <summary>
-                <div class="tree-item">
-                  <div class="icon folder-icon">
-                    {% if child_children.size > 0 %}
-                    📂
-                    {% else %}
-                    📁
-                    {% endif %}
-                  </div>
-                  <span class="folder-name">{{ child_name }}</span>
-                </div>
-              </summary>
-
-              {% if child_children.size > 0 %}
-              <ul>
-                {% for grandchild_node in child_children %}
-                {% assign grandchild_name = grandchild_node[0] %}
-                {% assign grandchild_is_file = grandchild_node[1] %}
-                {% assign grandchild_page = grandchild_node[2] %}
-                {% assign grandchild_children = grandchild_node[3] %}
-
-                <li>
-                  {% if grandchild_is_file %}
-                  {% comment %} 第三级文件项 {% endcomment %}
-                  <div class="tree-item">
-                    <div class="icon file-icon">📄</div>
-                    <a href="{{ grandchild_page.url | relative_url }}" class="file-link">
-                      <span class="file-name">{{ grandchild_name }}</span>
-                    </a>
-                  </div>
-                  {% else %}
-                  {% comment %} 第三级文件夹项（简单处理，不继续嵌套）{% endcomment %}
-                  <div class="tree-item">
-                    <div class="icon folder-icon">
-                      {% if grandchild_children.size > 0 %}
-                      📂
-                      {% else %}
-                      📁
-                      {% endif %}
-                    </div>
-                    <span class="folder-name">{{ grandchild_name }}</span>
-                    {% if grandchild_children.size > 0 %}
-                    <span style="margin-left: 8px; color: #999; font-size: 13px;">
-                      ({{ grandchild_children.size }} 个项目)
-                    </span>
-                    {% endif %}
-                  </div>
-                  {% endif %}
-                </li>
-                {% endfor %}
-              </ul>
-              {% else %}
-              <div class="empty-folder">空文件夹</div>
-              {% endif %}
-            </details>
-            {% endif %}
-          </li>
-          {% endfor %}
-        </ul>
-        {% else %}
-        <div class="empty-folder">空文件夹</div>
-        {% endif %}
-      </details>
-      {% endif %}
-    </li>
-    {% endfor %}
-  </ul>
-  {% else %}
-  <div class="empty-message">
-    目录结构解析失败。请检查wiki页面路径。
-  </div>
-  {% endif %}
-  {% else %}
-  <div class="empty-message">
-    未找到Wiki文档。请确保：
-    <ol style="text-align: left; display: inline-block; margin-top: 10px;">
-      <li>您的wiki文档存储在 <code>{{ wiki_prefix }}</code> 目录中</li>
-      <li>文档使用正确的扩展名（.md, .html, .markdown）</li>
-      <li>您已经运行了 <code>jekyll build</code> 或 <code>bundle exec jekyll serve</code></li>
-    </ol>
-  </div>
-  {% endif %}
-
-  <div
-    style="margin-top: 30px; padding-top: 15px; border-top: 1px solid var(--border-color); font-size: 13px; color: #777; text-align: center;">
-    最后更新: {{ site.time | date: "%Y-%m-%d %H:%M" }} |
-    使用 <strong>&lt;details&gt;</strong> 标签实现，无需JavaScript
-  </div>
-</div>
-
 <style>
+  /* 样式保持不变，为了简洁省略 */
   :root {
     --folder-open-color: #ff9800;
     --folder-closed-color: #ffb74d;
@@ -359,6 +144,18 @@
     border-left: 3px solid #4CAF50;
   }
 
+  .debug-info {
+    background-color: #fff8e1;
+    border: 1px solid #ffd54f;
+    border-radius: 4px;
+    padding: 15px;
+    margin: 15px 0;
+    font-family: monospace;
+    font-size: 13px;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
   @media (max-width: 768px) {
     .wiki-tree {
       padding: 10px;
@@ -373,3 +170,453 @@
     }
   }
 </style>
+<div class="wiki-tree">
+  <h2>📚 Wiki文档目录</h2>
+
+  {% comment %}
+  配置部分
+  {% endcomment %}
+  {% assign wiki_prefix = "wiki/" %}
+
+  {% comment %}
+  获取所有wiki页面
+  {% endcomment %}
+  {% assign all_wiki_pages = site.pages | where_exp: "page", "page.path contains wiki_prefix" %}
+
+  <div class="path-info">
+    共找到 <strong>{{ all_wiki_pages.size }}</strong> 个文档
+  </div>
+
+  {% if all_wiki_pages.size > 0 %}
+  {% comment %}
+  ================ 调试信息开始 ================
+  {% endcomment %}
+  <div class="debug-info">
+    <strong>调试信息 - 原始页面路径:</strong><br>
+    {% for page in all_wiki_pages %}
+    {{ page.path }}<br>
+    {% endfor %}
+    <hr>
+
+    {% comment %}
+    创建path_tree并添加调试信息
+    {% endcomment %}
+    {% assign path_tree = "" | split: "" %}
+    {% assign debug_messages = "" | split: "" %}
+
+    {% for page in all_wiki_pages %}
+    {% assign debug_msg = "处理页面: " | append: page.path | split: "|" %}
+    {% assign debug_messages = debug_messages | push: debug_msg %}
+
+    {% assign clean_path = page.path | remove: wiki_prefix | remove: ".md" | remove: ".html" | remove: ".markdown" %}
+    {% assign debug_msg = "clean_path: " | append: clean_path | split: "|" %}
+    {% assign debug_messages = debug_messages | push: debug_msg %}
+
+    {% assign path_parts = clean_path | split: "/" %}
+    {% assign debug_msg = "path_parts: " | append: path_parts | join: ", " | split: "|" %}
+    {% assign debug_messages = debug_messages | push: debug_msg %}
+
+    {% assign current_level = path_tree %}
+    {% assign debug_msg = "初始 current_level size: " | append: current_level.size | split: "|" %}
+    {% assign debug_messages = debug_messages | push: debug_msg %}
+
+    {% for part in path_parts %}
+    {% assign part_name = part %}
+    {% assign is_last = forloop.last %}
+
+    {% assign debug_msg = " 处理部分: " | append: part_name | append: " (is_last: " | append: is_last | append: ")" |
+    split: "|" %}
+    {% assign debug_messages = debug_messages | push: debug_msg %}
+
+    {% comment %}
+    在当前层级查找是否已存在此部分
+    {% endcomment %}
+    {% assign existing_node = nil %}
+    {% assign node_found = false %}
+
+    {% for node in current_level %}
+    {% assign debug_msg = " 检查节点: " | append: node[0] | split: "|" %}
+    {% assign debug_messages = debug_messages | push: debug_msg %}
+
+    {% if node[0] == part_name %}
+    {% assign existing_node = node %}
+    {% assign node_found = true %}
+    {% assign debug_msg = " ✓ 找到已存在的节点" | split: "|" %}
+    {% assign debug_messages = debug_messages | push: debug_msg %}
+    {% break %}
+    {% endif %}
+    {% endfor %}
+
+    {% if existing_node %}
+    {% comment %}
+    如果节点已存在，进入下一层
+    {% endcomment %}
+    {% assign current_level = existing_node[3] %}
+    {% assign debug_msg = " 进入下一层，新current_level size: " | append: current_level.size | split: "|" %}
+    {% assign debug_messages = debug_messages | push: debug_msg %}
+    {% else %}
+    {% comment %}
+    如果节点不存在，创建新节点
+    {% endcomment %}
+    {% assign debug_msg = " ✗ 节点不存在，创建新节点" | split: "|" %}
+    {% assign debug_messages = debug_messages | push: debug_msg %}
+
+    {% assign new_node_name = part_name %}
+    {% assign new_node_is_file = is_last %}
+    {% assign new_node_page = page %}
+    {% assign new_node_children = "" | split: "" %}
+
+    {% comment %}
+    创建节点数据结构
+    {% endcomment %}
+    {% assign node_data = "" | split: "" %}
+    {% assign node_data = node_data | push: new_node_name %}
+    {% assign node_data = node_data | push: new_node_is_file %}
+    {% assign node_data = node_data | push: new_node_page %}
+    {% assign node_data = node_data | push: new_node_children %}
+
+    {% assign debug_msg = " 创建节点: [" | append: new_node_name | append: ", " | append: new_node_is_file | append: ",
+    page, children]" | split: "|" %}
+    {% assign debug_messages = debug_messages | push: debug_msg %}
+
+    {% assign current_level = current_level | push: node_data %}
+    {% assign debug_msg = " 添加到current_level，现在size: " | append: current_level.size | split: "|" %}
+    {% assign debug_messages = debug_messages | push: debug_msg %}
+
+    {% comment %}
+    获取新添加的节点引用 - 这里可能有问题！
+    {% endcomment %}
+    {% assign found_new_node = false %}
+    {% for node in current_level %}
+    {% if node[0] == part_name %}
+    {% assign current_level = node[3] %}
+    {% assign found_new_node = true %}
+    {% assign debug_msg = " 找到新节点，进入它的子节点列表" | split: "|" %}
+    {% assign debug_messages = debug_messages | push: debug_msg %}
+    {% break %}
+    {% endif %}
+    {% endfor %}
+
+    {% unless found_new_node %}
+    {% assign debug_msg = " ⚠️ 警告：未能找到新创建的节点！" | split: "|" %}
+    {% assign debug_messages = debug_messages | push: debug_msg %}
+    {% endunless %}
+    {% endif %}
+    {% endfor %}
+
+    {% assign debug_msg = "---" | split: "|" %}
+    {% assign debug_messages = debug_messages | push: debug_msg %}
+    {% endfor %}
+
+    <hr>
+    <strong>调试信息 - 处理过程:</strong><br>
+    {% for msg in debug_messages %}
+    {{ msg }}<br>
+    {% endfor %}
+
+    <hr>
+    <strong>最终path_tree状态:</strong><br>
+    path_tree size: {{ path_tree.size }}<br>
+    {% if path_tree.size > 0 %}
+    path_tree内容:<br>
+    {% for node in path_tree %}
+    节点 {{ forloop.index }}: {{ node[0] }} (is_file: {{ node[1] }})<br>
+    {% endfor %}
+    {% else %}
+    path_tree为空！问题可能出在：
+    <ol>
+      <li>节点比较失败（node[0] == part_name 条件不匹配）</li>
+      <li>创建节点后无法正确找到它</li>
+      <li>Liquid数组操作有问题</li>
+    </ol>
+    {% endif %}
+  </div>
+
+  {% comment %}
+  ================ 调试信息结束 ================
+
+  现在使用修正后的算法构建path_tree
+  {% endcomment %}
+
+  {% comment %}
+  修正算法：使用哈希表方式构建树结构
+  {% endcomment %}
+  {% assign path_tree_hash = "" | split: "" %}
+
+  {% for page in all_wiki_pages %}
+  {% assign clean_path = page.path | remove: wiki_prefix | remove: ".md" | remove: ".html" | remove: ".markdown" %}
+  {% assign path_parts = clean_path | split: "/" %}
+
+  {% comment %}
+  构建路径键值
+  {% endcomment %}
+  {% assign current_key = "" %}
+  {% assign parent_key = "" %}
+
+  {% for part in path_parts %}
+  {% assign part_name = part %}
+  {% assign is_last = forloop.last %}
+
+  {% if current_key == "" %}
+  {% assign current_key = part_name %}
+  {% else %}
+  {% assign current_key = current_key | append: "||" | append: part_name %}
+  {% endif %}
+
+  {% comment %}
+  检查是否已存在此节点
+  {% endcomment %}
+  {% assign node_exists = false %}
+  {% for hash_item in path_tree_hash %}
+  {% if hash_item[0] == current_key %}
+  {% assign node_exists = true %}
+
+  {% comment %}
+  如果是文件节点，更新页面信息
+  {% endcomment %}
+  {% if is_last %}
+  {% assign hash_item[2] = page %}
+  {% endif %}
+
+  {% break %}
+  {% endif %}
+  {% endfor %}
+
+  {% unless node_exists %}
+  {% comment %}
+  创建新节点
+  {% endcomment %}
+  {% assign node_data = "" | split: "" %}
+  {% assign node_data = node_data | push: current_key %} {% comment %} 0: key {% endcomment %}
+  {% assign node_data = node_data | push: part_name %} {% comment %} 1: name {% endcomment %}
+  {% assign node_data = node_data | push: page %} {% comment %} 2: page (如果是文件) {% endcomment %}
+  {% assign node_data = node_data | push: is_last %} {% comment %} 3: is_file {% endcomment %}
+  {% assign node_data = node_data | push: parent_key %} {% comment %} 4: parent_key {% endcomment %}
+  {% assign node_data = node_data | push: "" | split: "" %} {% comment %} 5: children_keys {% endcomment %}
+
+  {% assign path_tree_hash = path_tree_hash | push: node_data %}
+
+  {% comment %}
+  如果是目录，添加到父节点的children中
+  {% endcomment %}
+  {% unless is_last %}
+  {% for parent_item in path_tree_hash %}
+  {% if parent_item[0] == parent_key %}
+  {% assign children = parent_item[5] %}
+  {% assign children = children | push: current_key %}
+  {% assign parent_item[5] = children %}
+  {% break %}
+  {% endif %}
+  {% endfor %}
+  {% endunless %}
+  {% endunless %}
+
+  {% assign parent_key = current_key %}
+  {% endfor %}
+  {% endfor %}
+
+  {% comment %}
+  现在将哈希表转换为树形结构
+  {% endcomment %}
+  {% assign path_tree = "" | split: "" %}
+
+  {% comment %}
+  首先找到根节点（parent_key为空的节点）
+  {% endcomment %}
+  {% for item in path_tree_hash %}
+  {% if item[4] == "" %}
+  {% comment %}
+  创建树节点
+  {% endcomment %}
+  {% assign tree_node = "" | split: "" %}
+  {% assign tree_node = tree_node | push: item[1] %} {% comment %} 0: name {% endcomment %}
+  {% assign tree_node = tree_node | push: item[3] %} {% comment %} 1: is_file {% endcomment %}
+  {% assign tree_node = tree_node | push: item[2] %} {% comment %} 2: page {% endcomment %}
+
+  {% comment %}
+  收集子节点
+  {% endcomment %}
+  {% assign children_nodes = "" | split: "" %}
+  {% for child_key in item[5] %}
+  {% comment %}
+  查找子节点
+  {% endcomment %}
+  {% for child_item in path_tree_hash %}
+  {% if child_item[0] == child_key %}
+  {% comment %}
+  递归构建子节点（简化版，只处理两层）
+  {% endcomment %}
+  {% assign child_tree_node = "" | split: "" %}
+  {% assign child_tree_node = child_tree_node | push: child_item[1] %}
+  {% assign child_tree_node = child_tree_node | push: child_item[3] %}
+  {% assign child_tree_node = child_tree_node | push: child_item[2] %}
+
+  {% comment %}
+  构建孙节点
+  {% endcomment %}
+  {% assign grandchild_nodes = "" | split: "" %}
+  {% for grandchild_key in child_item[5] %}
+  {% for grandchild_item in path_tree_hash %}
+  {% if grandchild_item[0] == grandchild_key %}
+  {% assign grandchild_tree_node = "" | split: "" %}
+  {% assign grandchild_tree_node = grandchild_tree_node | push: grandchild_item[1] %}
+  {% assign grandchild_tree_node = grandchild_tree_node | push: grandchild_item[3] %}
+  {% assign grandchild_tree_node = grandchild_tree_node | push: grandchild_item[2] %}
+  {% assign grandchild_tree_node = grandchild_tree_node | push: "" | split: "" %}
+  {% assign grandchild_nodes = grandchild_nodes | push: grandchild_tree_node %}
+  {% break %}
+  {% endif %}
+  {% endfor %}
+  {% endfor %}
+
+  {% assign child_tree_node = child_tree_node | push: grandchild_nodes %}
+  {% assign children_nodes = children_nodes | push: child_tree_node %}
+  {% break %}
+  {% endif %}
+  {% endfor %}
+  {% endfor %}
+
+  {% assign tree_node = tree_node | push: children_nodes %}
+  {% assign path_tree = path_tree | push: tree_node %}
+  {% endif %}
+  {% endfor %}
+
+  {% comment %}
+  显示修正后的path_tree状态
+  {% endcomment %}
+  <div class="debug-info" style="background-color: #e8f5e9; border-color: #4caf50;">
+    <strong>修正后的path_tree状态:</strong><br>
+    path_tree size: {{ path_tree.size }}<br>
+    {% if path_tree.size > 0 %}
+    根节点:<br>
+    {% for node in path_tree %}
+    - {{ node[0] }} (is_file: {{ node[1] }}) - {{ node[3].size }} 个子节点<br>
+    {% endfor %}
+    {% endif %}
+  </div>
+
+  {% comment %}
+  渲染树形结构（使用修正后的path_tree）
+  {% endcomment %}
+  {% if path_tree.size > 0 %}
+  <ul class="tree">
+    {% for node in path_tree %}
+    {% assign node_name = node[0] %}
+    {% assign node_is_file = node[1] %}
+    {% assign node_page = node[2] %}
+    {% assign node_children = node[3] %}
+
+    <li>
+      {% if node_is_file %}
+      <div class="tree-item">
+        <div class="icon file-icon">📄</div>
+        <a href="{{ node_page.url | relative_url }}" class="file-link">
+          <span class="file-name">{{ node_name }}</span>
+        </a>
+      </div>
+      {% else %}
+      <details {% if node_children.size> 0 %}open{% endif %}>
+        <summary>
+          <div class="tree-item">
+            <div class="icon folder-icon">
+              {% if node_children.size > 0 %}
+              📂
+              {% else %}
+              📁
+              {% endif %}
+            </div>
+            <span class="folder-name">{{ node_name }}</span>
+            {% if node_children.size > 0 %}
+            <span style="margin-left: 8px; color: #999; font-size: 13px;">
+              ({{ node_children.size }} 个项目)
+            </span>
+            {% endif %}
+          </div>
+        </summary>
+
+        {% if node_children.size > 0 %}
+        <ul>
+          {% for child_node in node_children %}
+          {% assign child_name = child_node[0] %}
+          {% assign child_is_file = child_node[1] %}
+          {% assign child_page = child_node[2] %}
+          {% assign child_children = child_node[3] %}
+
+          <li>
+            {% if child_is_file %}
+            <div class="tree-item">
+              <div class="icon file-icon">📄</div>
+              <a href="{{ child_page.url | relative_url }}" class="file-link">
+                <span class="file-name">{{ child_name }}</span>
+              </a>
+            </div>
+            {% else %}
+            <details {% if child_children.size> 0 %}open{% endif %}>
+              <summary>
+                <div class="tree-item">
+                  <div class="icon folder-icon">
+                    {% if child_children.size > 0 %}
+                    📂
+                    {% else %}
+                    📁
+                    {% endif %}
+                  </div>
+                  <span class="folder-name">{{ child_name }}</span>
+                  {% if child_children.size > 0 %}
+                  <span style="margin-left: 8px; color: #999; font-size: 13px;">
+                    ({{ child_children.size }} 个项目)
+                  </span>
+                  {% endif %}
+                </div>
+              </summary>
+
+              {% if child_children.size > 0 %}
+              <ul>
+                {% for grandchild_node in child_children %}
+                {% assign grandchild_name = grandchild_node[0] %}
+                {% assign grandchild_is_file = grandchild_node[1] %}
+                {% assign grandchild_page = grandchild_node[2] %}
+
+                <li>
+                  <div class="tree-item">
+                    <div class="icon {% if grandchild_is_file %}file-icon">📄{% else %}folder-icon">📁{% endif %}
+                    </div>
+                    {% if grandchild_is_file %}
+                    <a href="{{ grandchild_page.url | relative_url }}" class="file-link">
+                      <span class="file-name">{{ grandchild_name }}</span>
+                    </a>
+                    {% else %}
+                    <span class="folder-name">{{ grandchild_name }}</span>
+                    {% endif %}
+                  </div>
+                </li>
+                {% endfor %}
+              </ul>
+              {% else %}
+              <div class="empty-folder">空文件夹</div>
+              {% endif %}
+            </details>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div class="empty-folder">空文件夹</div>
+        {% endif %}
+      </details>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="empty-message">
+    目录结构解析失败。修正算法也未能构建path_tree。
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="empty-message">
+    未找到Wiki文档。请确保您的wiki文档存储在正确的目录中。
+  </div>
+  {% endif %}
+</div>
