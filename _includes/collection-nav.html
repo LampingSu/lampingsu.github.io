@@ -6,7 +6,8 @@
 {% assign page_path_prefix = collection_path_prefix | append: episode_id | append: '.' %}
 {% assign toc_path_prefix = collection_path_prefix | append: '目录.' %}
 {% assign toc_path = page.path | replace: page_path_prefix, toc_path_prefix %}
-{% assign collection_pages = site.pages | where_exp: "page_item", "page_item.path contains collection_path_prefix and page_item.path != toc_path" | sort: "path" %}
+{% assign collection_pages = site.pages | where_exp: "page_item", "page_item.path contains collection_path_prefix" %}
+{% assign collection_pages = collection_pages | where_exp: "page_item", "page_item.path != toc_path" | sort: "path" %}
 
 {% assign first_page = collection_pages | first %}
 {% assign last_page = collection_pages | last %}
