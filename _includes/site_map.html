@@ -1,217 +1,151 @@
-<!--
-可配置项：
+{% comment %}
+配置：
 - base_path: 你在仓库中用来存放 wiki 文档的目录（末尾带斜杠），例如 "wiki/"、"docs/wiki/" 等。
-  默认是 "wiki/"。请按你仓库的实际存放路径修改此处变量。
-说明：
-- 该页面用纯 Liquid（无 JS）生成树形目录，文件/文件夹图标用 CSS + 内嵌 SVG（data URI）。
-- 文件夹使用 <details> / <summary> 实现展开/折叠；folder 图标会随 details[open] 改变，不会额外显示三角箭头。
-- 只遍历 site.pages（即 Jekyll 渲染出的页面），如果你的 wiki 是通过别的方式存放，请调整过滤条件。
--->
+  默认是 "wiki/"。按实际修改。
+{% endcomment %}
 
 {% assign base_path = "wiki/" %}
-
-<style>
-  /* 基本树形样式 */
-  .tree {
-    list-style: none;
-    padding-left: 0;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  }
-
-  .tree ul {
-    list-style: none;
-    margin: 0 0 0 1.25rem;
-    padding-left: 0;
-  }
-
-  /* 移除 summary 默认的 disclosure triangle */
-  .tree details>summary {
-    list-style: none;
-    cursor: pointer;
-    display: block;
-    padding: 0.15rem 0;
-    margin: 0;
-    position: relative;
-    padding-left: 1.75rem;
-    /* 给图标预留空间 */
-    outline: none;
-  }
-
-  .tree details>summary::-webkit-details-marker {
-    display: none;
-  }
-
-  .tree details>summary::marker {
-    content: "";
-  }
-
-  /* folder 图标（closed / open）——使用 inline SVG data URI */
-  .tree details>summary::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0.15rem;
-    width: 1.25rem;
-    height: 1rem;
-    background-repeat: no-repeat;
-    background-size: contain;
-    /* closed folder icon */
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='14' viewBox='0 0 20 14'><path fill='%23F0C674' d='M2 3h6l2 2h8v7a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3z'/><path fill='%23E9B65A' d='M2 3h6l2 2H3a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h3V3z' opacity='0.2'/></svg>");
-  }
-
-  /* open 时的 folder icon */
-  .tree details[open]>summary::before {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='14' viewBox='0 0 20 14'><path fill='%23F0C674' d='M2 4h6l2 2h8v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4z'/><path fill='%23E9B65A' d='M2 4h6l2 2H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h3V4z' opacity='0.2'/></svg>");
-  }
-
-  /* file 图标（单一图标）*/
-  .tree li.file {
-    position: relative;
-    padding-left: 1.75rem;
-    margin: 0.05rem 0;
-  }
-
-  .tree li.file::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0.18rem;
-    width: 1.05rem;
-    height: 1rem;
-    background-repeat: no-repeat;
-    background-size: contain;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='16' viewBox='0 0 14 16'><path fill='%2388C0D0' d='M2 0h6l4 4v12a0 0 0 0 1 0 0H2a2 2 0 0 1-2-2V2A2 2 0 0 1 2 0z' opacity='0.95'/></svg>");
-  }
-
-  /* 链接样式 */
-  .tree a {
-    color: inherit;
-    text-decoration: none;
-  }
-
-  .tree a:hover {
-    text-decoration: underline;
-  }
-
-  /* 小屏幕缩进更紧凑 */
-  @media (max-width: 480px) {
-    .tree details>summary {
-      padding-left: 1.5rem;
-    }
-
-    .tree li.file {
-      padding-left: 1.5rem;
-    }
-
-    .tree details>summary::before,
-    .tree li.file::before {
-      left: 0.1rem;
-    }
-  }
-</style>
+{% assign base_path_len = base_path | size %}
 
 <nav aria-label="Wiki 目录">
   <ul class="tree">
     {%- comment -%}
-    算法：
-    - 遍历 site.pages（按 page.path 排序），只选取 path 中包含 base_path 的页面
-    - 将每个 page 的相对路径（相对于 base_path）分割成段（segments）
-    - 维护 prev_segments，逐条比较得到公共父目录深度：common_dir
-    - 根据 common_dir 关闭多余的目录（输出相应的 </ul>
-  </details>
-  </li>）
-  - 为需要新打开的目录输出 <li>
-    <details>
-      <summary>NAME</summary>
-      <ul>
-        - 然后把当前 page 渲染为一个文件项 <li class="file">...</li>
-        - 循环结束后关闭剩余打开的目录
-        注意：Liquid 的数组与数值计算都用到内置的 filter（plus / minus / replace_first / split / size / append / default）
-        {%- endcomment -%}
+    算法说明：
+    - 遍历 site.pages（按 path 排序），只处理 path 包含 base_path 的页面
+    - 将每个 page.path 相对于 base_path 分割为 segments
+    - 维护 prev_segments，按公共前缀决定关闭/打开哪些 <details>
+    - 用 <details><summary>dirname</summary><ul> 嵌套目录结构
+    - 每个文件输出为 <li class="file"><a href="...">title</a></li>
+    {%- endcomment -%}
 
-        {% assign prev_segments = "" | split: "/" %} {# 初始为空数组 (长度 1) #}
+    {% assign prev_segments = "" | split: "/" %}
+    {% assign pages = site.pages | sort: "path" %}
 
-        {%- assign pages = site.pages | sort: "path" -%}
-        {%- for page in pages -%}
-        {%- if page.path contains base_path -%}
-        {%- comment -%} 计算相对于 base_path 的路径段数组 {%- endcomment -%}
-        {% assign rel = page.path | replace_first: base_path, '' %}
-        {% assign segments = rel | split: "/" %}
-        {% assign seg_len = segments | size %}
-        {% assign prev_len = prev_segments | size %}
+    {% for page in pages %}
+      {% assign path_prefix = page.path | slice: 0, base_path_len %}
+      {% if path_prefix != base_path %}
+        {% continue %}
+      {% endif %}
 
-        {%- comment -%}
-        目录的深度等于 segments 数组长度减 1（最后一个是文件名）
-        计算 prev_dir_len, curr_dir_len, 并求 limit（比较时的上限）
-        {%- endcomment -%}
-        {% assign prev_dir_len = prev_len | minus: 1 %}
-        {% assign curr_dir_len = seg_len | minus: 1 %}
+      {% assign segments = page.path | replace_first: base_path, '' | split: "/" %}
+      {% assign seg_len = segments | size %}
+      {% assign prev_len = prev_segments | size %}
 
-        {% if prev_dir_len < curr_dir_len %} {% assign limit=prev_dir_len %} {% else %} {% assign limit=curr_dir_len %}
-          {% endif %} {%- comment -%} 计算公共目录深度 common_dir {%- endcomment -%} {% assign common_dir=0 %} {% if limit> 0 %}
-          {% for i in (0..limit-1) %}
+      {% assign prev_dir_len = prev_len | minus: 1 %}
+      {% assign curr_dir_len = seg_len | minus: 1 %}
+
+      {% if prev_dir_len < curr_dir_len %}
+        {% assign limit = prev_dir_len %}
+      {% else %}
+        {% assign limit = curr_dir_len %}
+      {% endif %}
+
+      {% assign common_dir = 0 %}
+      {% if limit > 0 %}
+        {% for i in (0..limit-1) %}
           {% assign a = prev_segments[i] %}
           {% assign b = segments[i] %}
           {% if a == b %}
-          {% assign common_dir = common_dir | plus: 1 %}
+            {% assign common_dir = common_dir | plus: 1 %}
           {% endif %}
-          {% endfor %}
-          {% endif %}
-
-          {%- comment -%}
-          关闭比 common_dir 更深的之前打开的目录：
-          需要关闭的次数 = prev_dir_len - common_dir
-          每次关闭输出： </ul>
-    </details>
-  </li>
-  {%- endcomment -%}
-  {% assign close_count = prev_dir_len | minus: common_dir %}
-  {% if close_count > 0 %}
-  {% for _ in (1..close_count) %}
-  </ul>
-  </details>
-  </li>
-  {% endfor %}
-  {% endif %}
-
-  {%- comment -%}
-  打开从 common_dir 到 curr_dir_len-1 的目录（如果有）：
-  open_count = curr_dir_len - common_dir
-  每打开一层输出： <li>
-    <details>
-      <summary>NAME</summary>
-      <ul>
-        {%- endcomment -%}
-        {% assign open_count = curr_dir_len | minus: common_dir %}
-        {% if open_count > 0 %}
-        {% for k in (0..open_count-1) %}
-        {% assign idx = common_dir | plus: k %}
-        {% assign dirname = segments[idx] %}
-        <li>
-          <details>
-            <summary>{{ dirname }}</summary>
-            <ul>
-              {% endfor %}
-              {% endif %}
-
-              {%- comment -%} 输出当前文件项（展示 page.title（若有）或 page.name） {%- endcomment -%}
-              {% assign pretty = page.title | default: page.name %}
-              <li class="file"><a href="{{ page.url | relative_url }}">{{ pretty }}</a></li>
-
-              {%- comment -%} 更新 prev_segments 为当前 segments {%- endcomment -%}
-              {% assign prev_segments = segments %}
-              {%- endif -%}
-              {%- endfor -%}
-
-              {%- comment -%} 循环结束后关闭剩余打开的目录（如果有） {%- endcomment -%}
-              {% assign final_prev_len = prev_segments | size %}
-              {% assign final_prev_dir_len = final_prev_len | minus: 1 %}
-              {% if final_prev_dir_len > 0 %}
-              {% for _ in (1..final_prev_dir_len) %}
-            </ul>
-          </details>
-        </li>
         {% endfor %}
-        {% endif %}
-      </ul>
+      {% endif %}
+
+      {% assign close_count = prev_dir_len | minus: common_dir %}
+      {% if close_count > 0 %}
+        {% for _ in (1..close_count) %}
+          </ul></details></li>
+        {% endfor %}
+      {% endif %}
+
+      {% assign open_count = curr_dir_len | minus: common_dir %}
+      {% if open_count > 0 %}
+        {% for k in (0..open_count-1) %}
+          {% assign idx = common_dir | plus: k %}
+          {% assign dirname = segments[idx] %}
+          <li><details><summary>{{ dirname }}</summary><ul>
+        {% endfor %}
+      {% endif %}
+
+      {% assign pretty = page.title | default: page.name %}
+      <li class="file"><a href="{{ page.url | relative_url }}">{{ pretty }}</a></li>
+
+      {% assign prev_segments = segments %}
+    {% endfor %}
+
+    {% assign final_prev_len = prev_segments | size %}
+    {% assign final_prev_dir_len = final_prev_len | minus: 1 %}
+    {% if final_prev_dir_len > 0 %}
+      {% for _ in (1..final_prev_dir_len) %}
+        </ul></details></li>
+      {% endfor %}
+    {% endif %}
+  </ul>
 </nav>
+
+<style>
+/* 基本树形样式 */
+.tree { list-style: none; padding-left: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji"; }
+.tree ul { list-style: none; margin: 0 0 0 0.5rem; padding-left: 1rem; }
+
+/* summary & details 样式：移除默认 disclosure triangle */
+.tree details > summary {
+  list-style: none;
+  cursor: pointer;
+  display: block;
+  padding: 0.18rem 0;
+  margin: 0;
+  position: relative;
+  padding-left: 1.9rem; /* 给 emoji 预留空间 */
+  outline: none;
+  user-select: none;
+  line-height: 1.2;
+}
+.tree details > summary::-webkit-details-marker { display: none; }
+.tree details > summary::marker { content: ""; }
+
+/* folder emoji（closed / open）*/
+.tree details > summary::before {
+  content: "📁";
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-size: 1.05rem;
+  line-height: 1;
+  transform: translateY(0.05rem); /* 微调垂直对齐 */
+  /* 指定 emoji 字体优先，确保跨平台显示 */
+  font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+}
+
+/* open 时显示 open-folder emoji */
+.tree details[open] > summary::before {
+  content: "📂";
+}
+
+/* 文件项样式与图标 */
+.tree li.file {
+  position: relative;
+  padding-left: 1.9rem;
+  margin: 0.08rem 0;
+  line-height: 1.2;
+}
+.tree li.file::before {
+  content: "📄";
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-size: 1.0rem;
+  transform: translateY(0.05rem);
+  font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+}
+
+/* 链接样式 */
+.tree a { color: inherit; text-decoration: none; }
+.tree a:hover { text-decoration: underline; }
+
+/* 可选：缩小或放大整体图标大小（按需调整） */
+@media (max-width: 480px) {
+  .tree details > summary, .tree li.file { padding-left: 1.5rem; }
+  .tree details > summary::before, .tree li.file::before { left: 0.05rem; font-size: 0.95rem; }
+}
+</style>
