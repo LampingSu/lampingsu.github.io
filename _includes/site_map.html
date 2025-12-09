@@ -9,88 +9,97 @@
 
 <nav aria-label="Wiki 目录">
   网站导航
-  <ul class="tree">
+  <ul class="explorer-tree">
     {%- comment -%}
     算法说明：
     - 遍历 site.pages（按 path 排序），只处理 path 包含 base_path 的页面
     - 将每个 page.path 相对于 base_path 分割为 segments
     - 维护 prev_segments，按公共前缀决定关闭/打开哪些 <details>
-      - 用 <details>
-        <summary>dirname</summary>
-        <ul> 嵌套目录结构
-          - 每个文件输出为 <li class="file"><a href="...">title</a></li>
-          {%- endcomment -%}
+    - 用 <details><summary>dirname</summary><ul> 嵌套目录结构
+    - 每个文件输出为 <li class="file"><a href="...">title</a></li>
+    {%- endcomment -%}
 
-          {% assign prev_segments = "" | split: "/" %}
-          {% assign pages = site.pages | sort: "path" %}
+    {% assign prev_segments = "" | split: "/" %}
+    {% assign pages = site.pages | sort: "path" %}
 
-          {% for page in pages %}
-          {% assign path_prefix = page.path | slice: 0, base_path_len %}
-          {% if path_prefix != base_path %}
-          {% continue %}
-          {% endif %}
+    {% for page in pages %}
+      {% assign path_prefix = page.path | slice: 0, base_path_len %}
+      {% if path_prefix != base_path %}
+        {% continue %}
+      {% endif %}
 
-          {% assign segments = page.path | replace_first: base_path, '' | split: "/" %}
-          {% assign seg_len = segments | size %}
-          {% assign prev_len = prev_segments | size %}
+      {% assign segments = page.path | replace_first: base_path, '' | split: "/" %}
+      {% assign seg_len = segments | size %}
+      {% assign prev_len = prev_segments | size %}
 
-          {% assign prev_dir_len = prev_len | minus: 1 %}
-          {% assign curr_dir_len = seg_len | minus: 1 %}
+      {% assign prev_dir_len = prev_len | minus: 1 %}
+      {% assign curr_dir_len = seg_len | minus: 1 %}
 
-          {% if prev_dir_len < curr_dir_len %} {% assign limit=prev_dir_len %} {% else %} {% assign limit=curr_dir_len
-            %} {% endif %} {% assign common_dir=0 %} {% if limit> 0 %}
-            {% for i in (0..limit-1) %}
-            {% assign a = prev_segments[i] %}
-            {% assign b = segments[i] %}
-            {% if a == b %}
+      {% if prev_dir_len < curr_dir_len %} 
+        {% assign limit=prev_dir_len %} 
+      {% else %} 
+        {% assign limit=curr_dir_len %} 
+      {% endif %} 
+      
+      {% assign common_dir=0 %} 
+      {% if limit> 0 %}
+        {% for i in (0..limit-1) %}
+          {% assign a = prev_segments[i] %}
+          {% assign b = segments[i] %}
+          {% if a == b %}
             {% assign common_dir = common_dir | plus: 1 %}
-            {% endif %}
-            {% endfor %}
-            {% endif %}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
 
-            {% assign close_count = prev_dir_len | minus: common_dir %}
-            {% if close_count > 0 %}
-            {% for _ in (1..close_count) %}
-        </ul>
-      </details>
-      </li>
-      {% endfor %}
+      {% assign close_count = prev_dir_len | minus: common_dir %}
+      {% if close_count > 0 %}
+        {% for _ in (1..close_count) %}
+          </ul></details></li>
+        {% endfor %}
       {% endif %}
 
       {% assign open_count = curr_dir_len | minus: common_dir %}
       {% if open_count > 0 %}
-      {% for k in (0..open_count-1) %}
-      {% assign idx = common_dir | plus: k %}
-      {% assign dirname = segments[idx] %}
-      <li>
-        <details>
-          <summary>{{ dirname }}</summary>
-          <ul>
-            {% endfor %}
-            {% endif %}
-
-            {% assign pretty = page.title | default: page.name %}
-            <li class="file"><a href="{{ page.url | relative_url }}"><span class="file-icon">{% if is_toc %}📋{% else %}📄{% endif %}</span>{{ pretty }}</a></li>
-
-            {% assign prev_segments = segments %}
-            {% endfor %}
-
-            {% assign final_prev_len = prev_segments | size %}
-            {% assign final_prev_dir_len = final_prev_len | minus: 1 %}
-            {% if final_prev_dir_len > 0 %}
-            {% for _ in (1..final_prev_dir_len) %}
-          </ul>
-        </details>
-      </li>
-      {% endfor %}
+        {% for k in (0..open_count-1) %}
+          {% assign idx = common_dir | plus: k %}
+          {% assign dirname = segments[idx] %}
+          <li class="explorer-folder">
+            <details>
+              <summary>
+                <span class="folder-icon">
+                  <span class="folder-closed">📁</span>
+                  <span class="folder-open">📂</span>
+                </span>
+                {{ dirname }}
+              </summary><ul>
+        {% endfor %}
       {% endif %}
+
+      {% assign pretty = page.title | default: page.name %}
+      <li class="explorer-file">
+        <a href="{{ page.url | relative_url }}">
+          <span class="file-icon">{% if is_toc %}📋{% else %}📄{% endif %}</span>{{ pretty }}
+        </a>
+      </li>
+
+      {% assign prev_segments = segments %}
+    {% endfor %}
+
+    {% assign final_prev_len = prev_segments | size %}
+    {% assign final_prev_dir_len = final_prev_len | minus: 1 %}
+    {% if final_prev_dir_len > 0 %}
+      {% for _ in (1..final_prev_dir_len) %}
+        </ul></details></li>
+      {% endfor %}
+    {% endif %}
   </ul>
   更新时间: {{ site.time | date: "%Y-%m-%d %H:%M" }}
 </nav>
 
 <style>
   /* 基本树形样式 */
-  .tree {
+  .explorer-tree {
     border: 1px solid #ddd;
     border-radius: 6px;
     background: white;
@@ -101,58 +110,81 @@
     overflow-y: auto;
   }
 
-  .tree ul {
+  .explorer-tree ul {
     list-style: none;
     margin: 0 0 0 0.5rem;
     padding-left: 1rem;
   }
 
-  /* summary & details 样式 */
-  .tree details>summary {
-    list-style: none;
-    cursor: pointer;
-    display: block;
-    padding: 0.18rem 0;
-    margin: 0;
-    position: relative;
-    padding-left: 1.9rem;
-    /* 给 emoji 预留空间 */
-    outline: none;
-    user-select: none;
-    line-height: 1.2;
+  .explorer-folder {
+    margin: 0.3rem 0;
   }
 
-  .tree details>summary::-webkit-details-marker {
+  .explorer-folder details {
+    margin: 0.2rem 0;
+  }
+
+  .explorer-folder summary {
+    cursor: pointer;
+    padding: 0.4rem 0.6rem;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    user-select: none;
+    list-style: none;
+  }
+
+  .explorer-folder summary:hover {
+    background: #f0f0f0;
+  }
+
+  .explorer-folder summary::-webkit-details-marker {
     display: none;
   }
 
-  .tree details>summary::marker {
-    content: "";
+  /* 动态文件夹图标 */
+  .folder-icon {
+    position: relative;
+    width: 1.2em;
+    height: 1.2em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  /* folder emoji（closed / open）*/
-  .tree details>summary::before {
-    content: "📁";
+  .folder-closed,
+  .folder-open {
     position: absolute;
-    left: 0;
     top: 0;
-    font-size: 1.05rem;
-    line-height: 1;
-    transform: translateY(0.05rem);
-    /* 微调垂直对齐 */
+    left: 0;
+    transition: opacity 0.2s;
+    font-size: 1.1em;
   }
 
-  /* open 时显示 open-folder emoji */
-  .tree details[open]>summary::before {
-    content: "📂";
+  .folder-closed {
+    opacity: 1;
+  }
+
+  .folder-open {
+    opacity: 0;
+  }
+
+  .explorer-folder details[open] .folder-closed {
+    opacity: 0;
+  }
+
+  .explorer-folder details[open] .folder-open {
+    opacity: 1;
   }
 
   /* 文件项样式与图标 */
-  .file {
+  .explorer-file {
     margin: 0.1rem 0;
   }
 
-  .file a {
+  .explorer-file a {
     display: flex;
     align-items: center;
     gap: 0.4rem;
@@ -164,7 +196,7 @@
     transition: all 0.1s;
   }
 
-  .file a:hover {
+  .explorer-file a:hover {
     background: #0366d6;
     color: white;
   }
@@ -172,20 +204,5 @@
   .file-icon {
     font-size: 0.9em;
     flex-shrink: 0;
-  }
-
-  /* 可选：缩小或放大整体图标大小（按需调整） */
-  @media (max-width: 480px) {
-
-    .tree details>summary,
-    .tree li.file {
-      padding-left: 1.5rem;
-    }
-
-    .tree details>summary::before,
-    .tree li.file::before {
-      left: 0.05rem;
-      font-size: 0.95rem;
-    }
   }
 </style>
