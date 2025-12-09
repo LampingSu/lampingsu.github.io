@@ -4,7 +4,7 @@
   默认是 "wiki/"。按实际修改。
 {% endcomment %}
 
-{% assign base_path = "wiki/" %}
+{% assign base_path = site.wiki_folder | append: "/" %}
 {% assign base_path_len = base_path | size %}
 
 <nav aria-label="Wiki 目录">
@@ -85,10 +85,19 @@
 
 <style>
 /* 基本树形样式 */
-.tree { list-style: none; padding-left: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji"; }
+.tree { 
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  padding-left: 0;   
+  margin: 0;
+  max-height: 60vh;
+  list-style: none;
+  overflow-y: auto;
+}
 .tree ul { list-style: none; margin: 0 0 0 0.5rem; padding-left: 1rem; }
 
-/* summary & details 样式：移除默认 disclosure triangle */
+/* summary & details 样式 */
 .tree details > summary {
   list-style: none;
   cursor: pointer;
@@ -113,8 +122,6 @@
   font-size: 1.05rem;
   line-height: 1;
   transform: translateY(0.05rem); /* 微调垂直对齐 */
-  /* 指定 emoji 字体优先，确保跨平台显示 */
-  font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
 }
 
 /* open 时显示 open-folder emoji */
