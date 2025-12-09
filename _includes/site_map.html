@@ -1,158 +1,192 @@
 {% comment %}
 配置：
 - base_path: 你在仓库中用来存放 wiki 文档的目录（末尾带斜杠），例如 "wiki/"、"docs/wiki/" 等。
-  默认是 "wiki/"。按实际修改。
+默认是 "wiki/"。按实际修改。
 {% endcomment %}
 
 {% assign base_path = site.wiki_folder | append: "/" %}
 {% assign base_path_len = base_path | size %}
 
 <nav aria-label="Wiki 目录">
+  网站导航
   <ul class="tree">
     {%- comment -%}
     算法说明：
     - 遍历 site.pages（按 path 排序），只处理 path 包含 base_path 的页面
     - 将每个 page.path 相对于 base_path 分割为 segments
     - 维护 prev_segments，按公共前缀决定关闭/打开哪些 <details>
-    - 用 <details><summary>dirname</summary><ul> 嵌套目录结构
-    - 每个文件输出为 <li class="file"><a href="...">title</a></li>
-    {%- endcomment -%}
+      - 用 <details>
+        <summary>dirname</summary>
+        <ul> 嵌套目录结构
+          - 每个文件输出为 <li class="file"><a href="...">title</a></li>
+          {%- endcomment -%}
 
-    {% assign prev_segments = "" | split: "/" %}
-    {% assign pages = site.pages | sort: "path" %}
+          {% assign prev_segments = "" | split: "/" %}
+          {% assign pages = site.pages | sort: "path" %}
 
-    {% for page in pages %}
-      {% assign path_prefix = page.path | slice: 0, base_path_len %}
-      {% if path_prefix != base_path %}
-        {% continue %}
-      {% endif %}
-
-      {% assign segments = page.path | replace_first: base_path, '' | split: "/" %}
-      {% assign seg_len = segments | size %}
-      {% assign prev_len = prev_segments | size %}
-
-      {% assign prev_dir_len = prev_len | minus: 1 %}
-      {% assign curr_dir_len = seg_len | minus: 1 %}
-
-      {% if prev_dir_len < curr_dir_len %}
-        {% assign limit = prev_dir_len %}
-      {% else %}
-        {% assign limit = curr_dir_len %}
-      {% endif %}
-
-      {% assign common_dir = 0 %}
-      {% if limit > 0 %}
-        {% for i in (0..limit-1) %}
-          {% assign a = prev_segments[i] %}
-          {% assign b = segments[i] %}
-          {% if a == b %}
-            {% assign common_dir = common_dir | plus: 1 %}
+          {% for page in pages %}
+          {% assign path_prefix = page.path | slice: 0, base_path_len %}
+          {% if path_prefix != base_path %}
+          {% continue %}
           {% endif %}
-        {% endfor %}
-      {% endif %}
 
-      {% assign close_count = prev_dir_len | minus: common_dir %}
-      {% if close_count > 0 %}
-        {% for _ in (1..close_count) %}
-          </ul></details></li>
-        {% endfor %}
+          {% assign segments = page.path | replace_first: base_path, '' | split: "/" %}
+          {% assign seg_len = segments | size %}
+          {% assign prev_len = prev_segments | size %}
+
+          {% assign prev_dir_len = prev_len | minus: 1 %}
+          {% assign curr_dir_len = seg_len | minus: 1 %}
+
+          {% if prev_dir_len < curr_dir_len %} {% assign limit=prev_dir_len %} {% else %} {% assign limit=curr_dir_len
+            %} {% endif %} {% assign common_dir=0 %} {% if limit> 0 %}
+            {% for i in (0..limit-1) %}
+            {% assign a = prev_segments[i] %}
+            {% assign b = segments[i] %}
+            {% if a == b %}
+            {% assign common_dir = common_dir | plus: 1 %}
+            {% endif %}
+            {% endfor %}
+            {% endif %}
+
+            {% assign close_count = prev_dir_len | minus: common_dir %}
+            {% if close_count > 0 %}
+            {% for _ in (1..close_count) %}
+        </ul>
+      </details>
+      </li>
+      {% endfor %}
       {% endif %}
 
       {% assign open_count = curr_dir_len | minus: common_dir %}
       {% if open_count > 0 %}
-        {% for k in (0..open_count-1) %}
-          {% assign idx = common_dir | plus: k %}
-          {% assign dirname = segments[idx] %}
-          <li><details><summary>{{ dirname }}</summary><ul>
-        {% endfor %}
-      {% endif %}
+      {% for k in (0..open_count-1) %}
+      {% assign idx = common_dir | plus: k %}
+      {% assign dirname = segments[idx] %}
+      <li>
+        <details>
+          <summary>{{ dirname }}</summary>
+          <ul>
+            {% endfor %}
+            {% endif %}
 
-      {% assign pretty = page.title | default: page.name %}
-      <li class="file"><a href="{{ page.url | relative_url }}">{{ pretty }}</a></li>
+            {% assign pretty = page.title | default: page.name %}
+            <li class="file"><a href="{{ page.url | relative_url }}">{{ pretty }}</a></li>
 
-      {% assign prev_segments = segments %}
-    {% endfor %}
+            {% assign prev_segments = segments %}
+            {% endfor %}
 
-    {% assign final_prev_len = prev_segments | size %}
-    {% assign final_prev_dir_len = final_prev_len | minus: 1 %}
-    {% if final_prev_dir_len > 0 %}
-      {% for _ in (1..final_prev_dir_len) %}
-        </ul></details></li>
+            {% assign final_prev_len = prev_segments | size %}
+            {% assign final_prev_dir_len = final_prev_len | minus: 1 %}
+            {% if final_prev_dir_len > 0 %}
+            {% for _ in (1..final_prev_dir_len) %}
+          </ul>
+        </details>
+      </li>
       {% endfor %}
-    {% endif %}
+      {% endif %}
   </ul>
+  更新时间: {{ site.time | date: "%Y-%m-%d %H:%M" }}
 </nav>
 
 <style>
-/* 基本树形样式 */
-.tree { 
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  background: white;
-  padding-left: 0;   
-  margin: 0;
-  max-height: 60vh;
-  list-style: none;
-  overflow-y: auto;
-}
-.tree ul { list-style: none; margin: 0 0 0 0.5rem; padding-left: 1rem; }
+  /* 基本树形样式 */
+  .tree {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: white;
+    padding-left: 0;
+    margin: 0;
+    max-height: 60vh;
+    list-style: none;
+    overflow-y: auto;
+  }
 
-/* summary & details 样式 */
-.tree details > summary {
-  list-style: none;
-  cursor: pointer;
-  display: block;
-  padding: 0.18rem 0;
-  margin: 0;
-  position: relative;
-  padding-left: 1.9rem; /* 给 emoji 预留空间 */
-  outline: none;
-  user-select: none;
-  line-height: 1.2;
-}
-.tree details > summary::-webkit-details-marker { display: none; }
-.tree details > summary::marker { content: ""; }
+  .tree ul {
+    list-style: none;
+    margin: 0 0 0 0.5rem;
+    padding-left: 1rem;
+  }
 
-/* folder emoji（closed / open）*/
-.tree details > summary::before {
-  content: "📁";
-  position: absolute;
-  left: 0;
-  top: 0;
-  font-size: 1.05rem;
-  line-height: 1;
-  transform: translateY(0.05rem); /* 微调垂直对齐 */
-}
+  /* summary & details 样式 */
+  .tree details>summary {
+    list-style: none;
+    cursor: pointer;
+    display: block;
+    padding: 0.18rem 0;
+    margin: 0;
+    position: relative;
+    padding-left: 1.9rem;
+    /* 给 emoji 预留空间 */
+    outline: none;
+    user-select: none;
+    line-height: 1.2;
+  }
 
-/* open 时显示 open-folder emoji */
-.tree details[open] > summary::before {
-  content: "📂";
-}
+  .tree details>summary::-webkit-details-marker {
+    display: none;
+  }
 
-/* 文件项样式与图标 */
-.tree li.file {
-  position: relative;
-  padding-left: 1.9rem;
-  margin: 0.08rem 0;
-  line-height: 1.2;
-}
-.tree li.file::before {
-  content: "📄";
-  position: absolute;
-  left: 0;
-  top: 0;
-  font-size: 1.0rem;
-  transform: translateY(0.05rem);
-  font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
-}
+  .tree details>summary::marker {
+    content: "";
+  }
 
-/* 链接样式 */
-.tree a { color: inherit; text-decoration: none; }
-.tree a:hover { text-decoration: underline; }
+  /* folder emoji（closed / open）*/
+  .tree details>summary::before {
+    content: "📁";
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-size: 1.05rem;
+    line-height: 1;
+    transform: translateY(0.05rem);
+    /* 微调垂直对齐 */
+  }
 
-/* 可选：缩小或放大整体图标大小（按需调整） */
-@media (max-width: 480px) {
-  .tree details > summary, .tree li.file { padding-left: 1.5rem; }
-  .tree details > summary::before, .tree li.file::before { left: 0.05rem; font-size: 0.95rem; }
-}
+  /* open 时显示 open-folder emoji */
+  .tree details[open]>summary::before {
+    content: "📂";
+  }
+
+  /* 文件项样式与图标 */
+  .tree li.file {
+    position: relative;
+    padding-left: 1.9rem;
+    margin: 0.08rem 0;
+    line-height: 1.2;
+  }
+
+  .tree li.file::before {
+    content: "📄";
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-size: 1.0rem;
+    transform: translateY(0.05rem);
+  }
+
+  /* 链接样式 */
+  .tree a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .tree a:hover {
+    background: #0366d6;
+    color: white;
+  }
+
+  /* 可选：缩小或放大整体图标大小（按需调整） */
+  @media (max-width: 480px) {
+
+    .tree details>summary,
+    .tree li.file {
+      padding-left: 1.5rem;
+    }
+
+    .tree details>summary::before,
+    .tree li.file::before {
+      left: 0.05rem;
+      font-size: 0.95rem;
+    }
+  }
 </style>
