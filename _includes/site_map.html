@@ -70,7 +70,7 @@
             {% endif %}
 
             {% assign pretty = page.title | default: page.name %}
-            <li class="file"><a href="{{ page.url | relative_url }}">{{ pretty }}</a></li>
+            <li class="file"><a href="{{ page.url | relative_url }}"><span class="file-icon">{% if is_toc %}📋{% else %}📄{% endif %}</span>{{ pretty }}</a></li>
 
             {% assign prev_segments = segments %}
             {% endfor %}
@@ -148,31 +148,30 @@
   }
 
   /* 文件项样式与图标 */
-  .tree li.file {
-    position: relative;
-    padding-left: 1.9rem;
-    margin: 0.08rem 0;
-    line-height: 1.2;
+  .file {
+    margin: 0.1rem 0;
   }
 
-  .tree li.file::before {
-    content: "📄";
-    position: absolute;
-    left: 0;
-    top: 0;
-    font-size: 1.0rem;
-    transform: translateY(0.05rem);
-  }
-
-  /* 链接样式 */
-  .tree a {
-    color: inherit;
+  .file a {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.6rem;
     text-decoration: none;
+    color: #24292e;
+    border-radius: 3px;
+    font-size: 0.85em;
+    transition: all 0.1s;
   }
 
-  .tree a:hover {
+  .file a:hover {
     background: #0366d6;
     color: white;
+  }
+
+  .file-icon {
+    font-size: 0.9em;
+    flex-shrink: 0;
   }
 
   /* 可选：缩小或放大整体图标大小（按需调整） */
