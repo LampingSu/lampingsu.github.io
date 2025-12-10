@@ -8,7 +8,7 @@
 {% assign base_path_len = base_path | size %}
 
 <nav aria-label="Wiki 目录">
-  网站导航
+  网站导航（更新时间: {{ site.time | date: "%Y-%m-%d %H:%M" }}）
   <ul class="explorer-tree">
     {%- comment -%}
     算法说明：
@@ -101,7 +101,6 @@
       {% endfor %}
     {% endif %}
   </ul>
-  更新时间: {{ site.time | date: "%Y-%m-%d %H:%M" }}
 </nav>
 
 <style>
