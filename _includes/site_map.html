@@ -73,9 +73,10 @@
             <details>
               <summary>
                 <span class="folder-icon">
-                  <span class="folder-closed">📁{{ dir_name }}</span>
-                  <span class="folder-open">📂{{ dir_name }}</span>
+                  <span class="folder-closed">📁</span>
+                  <span class="folder-open">📂</span>
                 </span>
+                {{ dir_name }}
               </summary><ul class="folder-contents">
         {% endfor %}
       {% endif %}
@@ -147,6 +148,7 @@
   /* 动态文件夹图标 */
   .folder-icon {
     position: relative;
+    width: 1.2em;
     height: 1.0em;
     display: flex;
     align-items: center;
