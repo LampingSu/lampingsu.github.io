@@ -70,7 +70,7 @@
           {% assign idx = common_dir | plus: k %}
           {% assign dir_name = segments[idx] %}
           <li class="explorer-folder">
-            <details open>
+            <details>
               <summary>
                 <span class="folder-icon">
                   <span class="folder-closed">📁{{ dir_name }}</span>
@@ -147,7 +147,6 @@
   /* 动态文件夹图标 */
   .folder-icon {
     position: relative;
-    width: 1.2em;
     height: 1.0em;
     display: flex;
     align-items: center;
