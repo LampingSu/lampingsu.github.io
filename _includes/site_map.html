@@ -19,30 +19,33 @@
     - 每个文件输出为 <li class="file"><a href="...">title</a></li>
     {%- endcomment -%}
 
+    {% comment %} 上一路径的数组形式，初始化为空数组 {% endcomment %}
     {% assign prev_segments = "" | split: "/" %}
-    {% assign pages = site.pages | sort: "path" %}
 
+    {% comment %} 将所有页面按路径排序，并遍历每一个页面 {% endcomment %}
+    {% assign pages = site.pages | sort: "path" %}
     {% for page in pages %}
+      {% comment %} 跳过不以路径前缀开始的页面 {% endcomment %}
       {% assign path_prefix = page.path | slice: 0, base_path_len %}
       {% if path_prefix != base_path %}
         {% continue %}
       {% endif %}
 
+      {% comment %} 将路径转化为目录或文件的数组（不含路径前缀代表的目录） {% endcomment %}
       {% assign segments = page.path | replace_first: base_path, '' | split: "/" %}
-      {% assign seg_len = segments | size %}
-      {% assign prev_len = prev_segments | size %}
+      {% assign prev_dir_len = prev_segments | size | minus: 1 %}
+      {% assign curr_dir_len = segments | size | minus: 1 %}
 
-      {% assign prev_dir_len = prev_len | minus: 1 %}
-      {% assign curr_dir_len = seg_len | minus: 1 %}
-
+      {% comment %} 当前路径与上一路径共同的目录级数，不可能超过这两个路径的目录级数的最小值 {% endcomment %}
       {% if prev_dir_len < curr_dir_len %} 
-        {% assign limit=prev_dir_len %} 
+        {% assign limit = prev_dir_len %} 
       {% else %} 
-        {% assign limit=curr_dir_len %} 
+        {% assign limit = curr_dir_len %} 
       {% endif %} 
       
+      {% comment %} 计算当前路径与上一路径有多少级共同的目录 {% endcomment %}
       {% assign common_dir=0 %} 
-      {% if limit> 0 %}
+      {% if limit > 0 %}
         {% for i in (0..limit-1) %}
           {% assign a = prev_segments[i] %}
           {% assign b = segments[i] %}
@@ -52,6 +55,7 @@
         {% endfor %}
       {% endif %}
 
+      {% comment %} 闭合当前路径与上一路径尾部不同的目录层级 {% endcomment %}
       {% assign close_count = prev_dir_len | minus: common_dir %}
       {% if close_count > 0 %}
         {% for _ in (1..close_count) %}
@@ -59,35 +63,37 @@
         {% endfor %}
       {% endif %}
 
+      {% comment %} 建立与上一路径尾部不同的目录层级 {% endcomment %}
       {% assign open_count = curr_dir_len | minus: common_dir %}
       {% if open_count > 0 %}
         {% for k in (0..open_count-1) %}
           {% assign idx = common_dir | plus: k %}
-          {% assign dirname = segments[idx] %}
+          {% assign dir_name = segments[idx] %}
           <li class="explorer-folder">
-            <details>
+            <details open>
               <summary>
                 <span class="folder-icon">
-                  <span class="folder-closed">📁</span>
-                  <span class="folder-open">📂</span>
+                  <span class="folder-closed">📁{{ dir_name }}</span>
+                  <span class="folder-open">📂{{ dir_name }}</span>
                 </span>
-                {{ dirname }}
-              </summary><ul>
+              </summary><ul class="folder-contents">
         {% endfor %}
       {% endif %}
 
-      {% assign pretty = page.title | default: page.name %}
+      {% comment %} 前级目录项已全部就绪，建立当前页面对应的文件项 {% endcomment %}
+      {% assign page_name = page.title | default: page.name %}
       <li class="explorer-file">
         <a href="{{ page.url | relative_url }}">
-          <span class="file-icon">{% if is_toc %}📋{% else %}📄{% endif %}</span>{{ pretty }}
+          <span class="file-icon">📄</span>{{ page_name }}
         </a>
       </li>
 
+      {% comment %} 当前页面处理完毕 {% endcomment %}
       {% assign prev_segments = segments %}
     {% endfor %}
 
-    {% assign final_prev_len = prev_segments | size %}
-    {% assign final_prev_dir_len = final_prev_len | minus: 1 %}
+    {% comment %} 闭合上一页面的路径中的所有目录层级 {% endcomment %}
+    {% assign final_prev_dir_len = prev_segments | size | minus: 1 %}
     {% if final_prev_dir_len > 0 %}
       {% for _ in (1..final_prev_dir_len) %}
         </ul></details></li>
@@ -108,12 +114,6 @@
     max-height: 60vh;
     list-style: none;
     overflow-y: auto;
-  }
-
-  .explorer-tree ul {
-    list-style: none;
-    margin: 0 0 0 0.5rem;
-    padding-left: 1rem;
   }
 
   .explorer-folder {
@@ -148,7 +148,7 @@
   .folder-icon {
     position: relative;
     width: 1.2em;
-    height: 1.2em;
+    height: 1.0em;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -160,7 +160,7 @@
     top: 0;
     left: 0;
     transition: opacity 0.2s;
-    font-size: 1.1em;
+    font-size: 1.0em;
   }
 
   .folder-closed {
@@ -177,6 +177,13 @@
 
   .explorer-folder details[open] .folder-open {
     opacity: 1;
+  }
+  
+  .folder-contents {
+    list-style: none;
+    padding-left: 1.5rem;
+    margin: 0.3rem 0;
+    border-left: 2px solid #e1e4e8;
   }
 
   /* 文件项样式与图标 */
@@ -201,8 +208,32 @@
     color: white;
   }
 
+  .explorer-file.active a {
+    background: #0366d6;
+    color: white;
+    font-weight: 500;
+  }
+
   .file-icon {
-    font-size: 0.9em;
+    font-size: 1.0em;
     flex-shrink: 0;
+  }
+
+  .explorer-tree::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .explorer-tree::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+
+  .explorer-tree::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+  }
+
+  .explorer-tree::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
   }
 </style>
