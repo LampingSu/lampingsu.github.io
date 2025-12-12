@@ -8,12 +8,12 @@
 {% assign base_path_len = base_path | size %}
 
 <nav aria-label="Wiki 目录">
-  网站导航（更新时间: {{ site.time | date: "%Y-%m-%d %H:%M" }}）
+  网站导航（{{ site.time | date: "%Y-%m-%d %H:%M" }}更新）
   <ul class="explorer-tree">
     {%- comment -%}
     算法说明：
     - 遍历 site.pages（按 path 排序），只处理 path 包含 base_path 的页面
-    - 将每个 page.path 相对于 base_path 分割为 segments
+    - 将每个 page_item.path 相对于 base_path 分割为 segments
     - 维护 prev_segments，按公共前缀决定关闭/打开哪些 <details>
     - 用 <details><summary>dirname</summary><ul> 嵌套目录结构
     - 每个文件输出为 <li class="file"><a href="...">title</a></li>
@@ -24,15 +24,15 @@
 
     {% comment %} 将所有页面按路径排序，并遍历每一个页面 {% endcomment %}
     {% assign pages = site.pages | sort: "path" %}
-    {% for page in pages %}
+    {% for page_item in pages %}
       {% comment %} 跳过不以路径前缀开始的页面 {% endcomment %}
-      {% assign path_prefix = page.path | slice: 0, base_path_len %}
+      {% assign path_prefix = page_item.path | slice: 0, base_path_len %}
       {% if path_prefix != base_path %}
         {% continue %}
       {% endif %}
 
       {% comment %} 将路径转化为目录或文件的数组（不含路径前缀代表的目录） {% endcomment %}
-      {% assign segments = page.path | replace_first: base_path, '' | split: "/" %}
+      {% assign segments = page_item.path | replace_first: base_path, '' | split: "/" %}
       {% assign prev_dir_len = prev_segments | size | minus: 1 %}
       {% assign curr_dir_len = segments | size | minus: 1 %}
 
@@ -70,7 +70,7 @@
           {% assign idx = common_dir | plus: k %}
           {% assign dir_name = segments[idx] %}
           <li class="explorer-folder">
-            <details>
+            <details {% if page.path == page_item.path %}open{% endif %}>
               <summary>
                 <span class="folder-icon">
                   <span class="folder-closed">📁</span>
@@ -82,9 +82,9 @@
       {% endif %}
 
       {% comment %} 前级目录项已全部就绪，建立当前页面对应的文件项 {% endcomment %}
-      {% assign page_name = page.title | default: page.name %}
-      <li class="explorer-file">
-        <a href="{{ page.url | relative_url }}">
+      {% assign page_name = page_item.title | default: page_item.name %}
+      <li class="explorer-file {% if page.url == page_item.url %}active{% endif %}">
+        <a href="{{ page_item.url | relative_url }}">
           <span class="file-icon">📄</span>{{ page_name }}
         </a>
       </li>
@@ -215,7 +215,7 @@
 
   .explorer-file.active a {
     background: #0366d6;
-    color: white;
+    color: yellow;
     font-weight: 500;
   }
 
