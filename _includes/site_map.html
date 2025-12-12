@@ -1,3 +1,26 @@
+{% for thepage in site.pages %}
+  path: {{ thepage.path }}        # 源文件路径，如 "wiki/记录/xxx.md"
+  url: {{ thepage.url }}          # 网站URL路径，如 "/wiki/记录/xxx.html"
+  name: {{ thepage.name }}        # 文件名，如 "xxx.md"
+  basename: {{ thepage.basename }} # 不带扩展名的文件名，如 "xxx"
+  dir: {{ thepage.dir }}          # 目录路径，如 "/wiki/记录"
+  ext: {{ thepage.ext }}          # 文件扩展名，如 ".md"
+  
+  # 前端变量（Front Matter）
+  title: {{ thepage.title }}
+  layout: {{ thepage.layout }}
+  permalink: {{ thepage.permalink }}
+  
+  # 内容相关
+  content: {{ thepage.content }}  # 页面内容（已转换）
+  excerpt: {{ thepage.excerpt }}  # 摘要
+  
+  # 日期相关（如果前端变量中有date）
+  date: {{ thepage.date }}
+  published: {{ thepage.published }}
+{% endfor %}
+
+
 {% comment %}
 配置：
 - base_path: 你在仓库中用来存放 wiki 文档的目录（末尾带斜杠），例如 "wiki/"、"docs/wiki/" 等。
