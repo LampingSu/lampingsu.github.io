@@ -1,34 +1,34 @@
-{% for thepage in site.pages %}
-  path: {{ thepage.path }}        # 源文件路径，如 "wiki/记录/xxx.md"
-  url: {{ thepage.url }}          # 网站URL路径，如 "/wiki/记录/xxx.html"
-  name: {{ thepage.name }}        # 文件名，如 "xxx.md"
-  basename: {{ thepage.basename }} # 不带扩展名的文件名，如 "xxx"
-  dir: {{ thepage.dir }}          # 目录路径，如 "/wiki/记录"
-  ext: {{ thepage.ext }}          # 文件扩展名，如 ".md"
-  
-  # 前端变量（Front Matter）
-  title: {{ thepage.title }}
-  layout: {{ thepage.layout }}
-  permalink: {{ thepage.permalink }}
-  
-  # 内容相关
-  content: {{ thepage.content }}  # 页面内容（已转换）
-  excerpt: {{ thepage.excerpt }}  # 摘要
-  
-  # 日期相关（如果前端变量中有date）
-  date: {{ thepage.date }}
-  published: {{ thepage.published }}
-{% endfor %}
-
-
 {% comment %}
 配置：
-- base_path: 你在仓库中用来存放 wiki 文档的目录（末尾带斜杠），例如 "wiki/"、"docs/wiki/" 等。
-默认是 "wiki/"。按实际修改。
+- base_path: 仓库中用来存放 wiki 文档的目录（末尾带斜杠）。默认为 "wiki/"。
 {% endcomment %}
-
 {% assign base_path = site.wiki_folder | append: "/" %}
 {% assign base_path_len = base_path | size %}
+
+{% comment %} 构建数组保存所有wiki页面，并为其添加短路径（不含前缘和文件名） {% endcomment %}
+{% assign wiki_pages = "" | split: "" %}
+{% for page_item in site.pages %}
+  {% assign page_path = page_item.path %}
+
+  {% comment %} 跳过不以路径前缀开始的页面 {% endcomment %}
+  {% assign path_prefix = page_path | slice: 0, base_path_len %}
+  {% if path_prefix != base_path %}
+    {% continue %}
+  {% endif %}
+
+  {% comment %} 去掉page_path中的前缀(base_path)和文件名 {% endcomment %}
+  {% assign page_name = page_item.name %}
+  {% assign page_path_len = page_path.size | minus: base_path_len | minus: page_name.size | minus: 1 %}
+  {% assign page_path = page_item.path | slice: base_path_len, page_path_len %}
+
+  {% assign wiki_page = page_item %}
+  {% assign wiki_page.short_path = page_path %}
+  {% assign wiki_pages = wiki_pages | push: wiki_page %}
+{% endfor %}
+
+{% for page_item in wiki_pages %}
+  {{ page_item.short_path }} | {{ page_item.name }}
+{% endfor %}
 
 <nav aria-label="Wiki 目录">
   网站导航（{{ site.time | date: "%Y-%m-%d %H:%M" }}更新）
