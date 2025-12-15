@@ -29,9 +29,9 @@
     {% endif %}
   {% endfor %}
   {% if existing %}
-    {% assign node = node | append: ":{{ page_item.slug }}:{{ page_item.title }}" %}
+    {% assign node = node | append: ":" | append: page_item.slug | append: ":" | append: page_item.title %}
   {% else %}
-    {% assign node = "{{ page_path }}:{{ page_item.slug }}:{{ page_item.title }}" %}
+    {% assign node = page_path | append: ":" | append: page_item.slug | append: ":" | append: page_item.title %}
     {% assign wiki_tree = wiki_tree | push: node %}
   {% endif %}
 {% endfor %}
