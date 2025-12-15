@@ -20,18 +20,42 @@
   {% assign page_path_len = page_path.size | minus: base_path_len | minus: page_item.name.size | minus: 1 %}
   {% assign page_path = page_item.path | slice: base_path_len, page_path_len %}
 
+  {% assign page_name = page_item.title %}
+  {% if page_name.size == 0 %}
+    {% assign page_name = page_item.name  %}
+    {% assign page_name_len = page_name.size | minus: page_item.ext.size %}
+    {% assign page_name = page_name | slice: 0, page_name_len  %}
+  {% else %}
+    {% assign name_parts = page_name | split: "(" %}
+    {% assign collection_name = name_parts | first %}
+    {% assign last_folder = page_path | split: "/" | last %}
+    {% if name_parts.size == 2 and collection_name == last_folder %}
+      {% assign left_parts = name_parts | last | split: ")" %}
+      {% assign episode_id = left_parts | first %}
+      {% assign episode_name = left_parts | last %}
+      {% if left_parts.size == 2 and episode_id.size > 0 %}
+        {% if episode_id == "目录" and episode_name.size == 0 %}
+          {% assign page_name = episode_id %}
+        {% elsif episode_name.size > 0 %}
+          {% assign page_name = episode_id | append: " " | append: episode_name %}
+        {% endif %}
+      {% endif %}
+    {% endif %}
+  {% endif %}
+
   {% assign existing = false %}
   {% for node in wiki_tree %}
-    {% assign node_path = node | split: ">" | first %}
+    {% assign node_path = node | split: ":" | first %}
     {% if node_path == page_path %}
       {% assign existing = true %}
       {% break %}
     {% endif %}
   {% endfor %}
+  
   {% if existing %}
-    {% assign node = node | append: ":" | append: page_item.slug | append: ":" | append: page_item.title %}
+    {% assign node = node | append: ":" | append: page_name %}
   {% else %}
-    {% assign node = page_path | append: ":" | append: page_item.slug | append: ":" | append: page_item.title %}
+    {% assign node = page_path | append: ":" | append: page_name %}
     {% assign wiki_tree = wiki_tree | push: node %}
   {% endif %}
 {% endfor %}
@@ -139,7 +163,7 @@
 <style>
   /* 基本树形样式 */
   .explorer-tree {
-   border: 1px solid #ddd;
+    border: 1px solid #ddd;
     border-radius: 6px;
     background: white;
     padding-left: 0;
