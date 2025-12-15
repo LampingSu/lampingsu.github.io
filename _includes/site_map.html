@@ -51,11 +51,14 @@
       {% break %}
     {% endif %}
   {% endfor %}
+  正在处理：{{ page_path }}
 
   {% if existing %}
     {% assign node = node | append: ":" | append: page_name %}
+    existing：{{ existing }}；node：{{ node }}
   {% else %}
     {% assign new_node = page_path | append: ":" | append: page_name %}
+    existing：{{ existing }}；new_node：{{ new_node }}
     {% assign wiki_tree = wiki_tree | push: new_node %}
   {% endif %}
 {% endfor %}
