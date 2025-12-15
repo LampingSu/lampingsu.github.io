@@ -1,7 +1,6 @@
 /* 基础字体放大：把 15px -> 17px（根据需要改成 16/18 等）*/
 html,
 body {
-  background-color: #c7edcc;  /* 改为最护眼的底色 */
   font-size: 20px;  /* 覆盖主题里的 15px */
   line-height: 1.6;
 }

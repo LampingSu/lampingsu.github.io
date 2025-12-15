@@ -6,7 +6,7 @@
 {% assign base_path_len = base_path | size %}
 
 {% comment %} 构建数组保存所有wiki页面，并为其添加短路径（不含前缘和文件名） {% endcomment %}
-{% assign wiki_pages = "" | split: "" %}
+{% assign wiki_tree = "" | split: "" %}
 {% for page_item in site.pages %}
   {% assign page_path = page_item.path %}
 
@@ -17,19 +17,27 @@
   {% endif %}
 
   {% comment %} 去掉page_path中的前缀(base_path)和文件名 {% endcomment %}
-  {% assign page_name = page_item.name %}
-  {% assign page_path_len = page_path.size | minus: base_path_len | minus: page_name.size | minus: 1 %}
+  {% assign page_path_len = page_path.size | minus: base_path_len | minus: page_item.name.size | minus: 1 %}
   {% assign page_path = page_item.path | slice: base_path_len, page_path_len %}
 
-  {% assign wiki_page = page_item %}
-  {% assign wiki_page.short_path = page_path %}
-  show：{{ wiki_page.short_path }} ： {{ wiki_page.name }}
-
-  {% assign wiki_pages = wiki_pages | push: wiki_page %}
+  {% assign existing = false %}
+  {% for node in wiki_tree %}
+    {% assign node_path = node | split: ">" | first %}
+    {% if node_path == page_path %}
+      {% assign existing = true %}
+      {% break %}
+    {% endif %}
+  {% endfor %}
+  {% if existing %}
+    {% assign node = node | append: ":{{ page_item.slug }}:{{ page_item.title }}" %}
+  {% else %}
+    {% assign node = "{{ page_path }}:{{ page_item.slug }}:{{ page_item.title }}" %}
+    {% assign wiki_tree = wiki_tree | push: node %}
+  {% endif %}
 {% endfor %}
 
-{% for page_item in wiki_pages %}
-  print：{{ page_item.short_path }} ： {{ page_item.name }}
+{% for node in wiki_tree %}
+  print：{{ node }}
 {% endfor %}
 
 <nav aria-label="Wiki 目录">
@@ -131,7 +139,7 @@
 <style>
   /* 基本树形样式 */
   .explorer-tree {
-    border: 1px solid #ddd;
+   border: 1px solid #ddd;
     border-radius: 6px;
     background: white;
     padding-left: 0;
