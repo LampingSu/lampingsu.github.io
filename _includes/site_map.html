@@ -23,11 +23,13 @@
 
   {% assign wiki_page = page_item %}
   {% assign wiki_page.short_path = page_path %}
+  show：{{ wiki_page.short_path }} ： {{ wiki_page.name }}
+
   {% assign wiki_pages = wiki_pages | push: wiki_page %}
 {% endfor %}
 
 {% for page_item in wiki_pages %}
-  {{ page_item.short_path }} | {{ page_item.name }}
+  print：{{ page_item.short_path }} ： {{ page_item.name }}
 {% endfor %}
 
 <nav aria-label="Wiki 目录">
