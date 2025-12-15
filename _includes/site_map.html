@@ -51,12 +51,12 @@
       {% break %}
     {% endif %}
   {% endfor %}
-  
+
   {% if existing %}
     {% assign node = node | append: ":" | append: page_name %}
   {% else %}
-    {% assign node = page_path | append: ":" | append: page_name %}
-    {% assign wiki_tree = wiki_tree | push: node %}
+    {% assign new_node = page_path | append: ":" | append: page_name %}
+    {% assign wiki_tree = wiki_tree | push: new_node %}
   {% endif %}
 {% endfor %}
 
