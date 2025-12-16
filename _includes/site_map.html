@@ -80,6 +80,10 @@
                   {% assign page_name = episode_id | append: ' ' | append: episode_name %}
                 {% endif %}
               {% endif %}
+              {% if page_name contains '目录' %}
+                {% assign lps = left_parts | inspect %}
+                {% assign page_name = 'page_name=' | append: page_name | append: ';left_parts=' | append: lps %}
+              {% endif %}
             {% endif %}
           {% endif %}
         
