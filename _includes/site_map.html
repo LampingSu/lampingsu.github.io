@@ -138,6 +138,7 @@
                   <span class="folder-open">📂</span>
                 </span>
                 {{ dir_name }}
+                <span class="item-count">({{ files.size }})</span>
               </summary><ul class="folder-contents">
         {% endfor %}
       {% endif %}
@@ -159,7 +160,7 @@
     {% endfor %}
 
     {% comment %} 闭合上一页面的路径中的所有目录层级 {% endcomment %}
-    {% assign final_prev_dir_len = prev_segments | size | minus: 1 %}
+    {% assign final_prev_dir_len = prev_segments.size %}
     {% if final_prev_dir_len > 0 %}
       {% for _ in (1..final_prev_dir_len) %}
         </ul></details></li>
@@ -246,6 +247,12 @@
 
   .explorer-folder details[open] .folder-open {
     opacity: 1;
+  }
+
+  .item-count {
+    font-size: 0.8em;
+    color: #6a737d;
+    margin-left: auto;
   }
   
   .folder-contents {
