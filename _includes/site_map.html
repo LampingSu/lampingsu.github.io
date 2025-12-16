@@ -48,7 +48,6 @@
     {% comment %} 遍历每一条路径 {% endcomment %}
     {% for wiki_path in wiki_paths %}
       {% comment %} 计算该目录下的文件项 {% endcomment %}
-      wiki_path: {{ wiki_path }}
       {% assign files = '' | split: '' %}
       {% for page_item in wiki_pages %}
         {% comment %} 计算正在处理的页面的短路径（不含前缘和文件名） {% endcomment %}
@@ -81,6 +80,9 @@
                   {% assign page_name = episode_id | append: ' ' | append: episode_name %}
                 {% endif %}
               {% endif %}
+              {% if page_name contains '目录' %}
+                {% assign page_name = 'page_name=' | append: page_name | append: ';collection_name=' | append: collection_name | append: ';episode_id=' | append: episode_id | append: ';episode_name=' | append: episode_name %}
+              {% endif %}
             {% endif %}
           {% endif %}
         
@@ -93,7 +95,6 @@
           {% endif %}
         {% endif %}
       {% endfor %}
-      files: {{ files | inspect }}
 
       {% comment %} 将路径转化为目录数组 {% endcomment %}
       {% assign segments = wiki_path | split: '/' %}
