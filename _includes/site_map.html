@@ -2,7 +2,7 @@
 配置：
 - base_path: 仓库中用来存放 wiki 文档的目录（末尾带斜杠）。默认为 "wiki/"。
 {% endcomment %}
-{% assign base_path = site.wiki_folder | append: "/" %}
+{% assign base_path = site.wiki_folder | append: '/' %}
 {% assign base_path_len = base_path | size %}
 
 {% comment %} 计算出当前显示的页面的短路径（不含前缘和文件名）备用 {% endcomment %}
@@ -29,8 +29,6 @@
   {% assign wiki_paths = wiki_paths | push: page_path %}
 {% endfor %}
 {% assign wiki_paths = wiki_paths | uniq %}
-wiki_paths: {{ wiki_paths | inspect }}
-wiki_pages: {{ wiki_pages | inspect }}
 
 <nav aria-label="Wiki 目录">
   网站导航（{{ site.time | date: '%Y-%m-%d %H:%M' }}更新）
@@ -85,14 +83,14 @@ wiki_pages: {{ wiki_pages | inspect }}
               {% endif %}
             {% endif %}
           {% endif %}
-        {% endif %}
-
-        {% assign page_name_and_url = page_name | append: '|' | append: page_item.url %}
-        {% if page_name == '目录' %}
-          {% comment %} 目录要排在最前面 {% endcomment %}
-          {% assign files = files | unshift: page_name_and_url %}
-        {% else %}
-          {% assign files = files | push: page_name_and_url %}
+        
+          {% assign page_name_and_url = page_name | append: '|' | append: page_item.url %}
+          {% if page_name == '目录' %}
+            {% comment %} 目录要排在最前面 {% endcomment %}
+            {% assign files = files | unshift: page_name_and_url %}
+          {% else %}
+            {% assign files = files | push: page_name_and_url %}
+          {% endif %}
         {% endif %}
       {% endfor %}
       files: {{ files | inspect }}
