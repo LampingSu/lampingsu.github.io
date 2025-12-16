@@ -73,15 +73,12 @@
               {% assign episode_id = left_parts | first %}
               {% assign episode_name = left_parts | last %}
               {% if left_parts.size == 2 and episode_id.size > 0 %}
-                {% if episode_id == '目录' and episode_name.size == 0 %}
+                {% if episode_id == '目录' %}
                   {% comment %} 如果是文集的目录的话，就取“目录”两字 {% endcomment %}
                   {% assign page_name = episode_id %}
                 {% elsif episode_name.size > 0 %}
                   {% assign page_name = episode_id | append: ' ' | append: episode_name %}
                 {% endif %}
-              {% endif %}
-              {% if page_name contains '目录' %}
-                {% assign page_name = 'page_name=' | append: page_name | append: ';collection_name=' | append: collection_name | append: ';episode_id=' | append: episode_id | append: ';episode_name=' | append: episode_name %}
               {% endif %}
             {% endif %}
           {% endif %}
