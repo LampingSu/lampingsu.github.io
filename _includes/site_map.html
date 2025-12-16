@@ -29,6 +29,8 @@
   {% assign wiki_paths = wiki_paths | push: page_path %}
 {% endfor %}
 {% assign wiki_paths = wiki_paths | uniq %}
+wiki_paths: {{ wiki_paths | inspect }}
+wiki_pages: {{ wiki_pages | inspect }}
 
 <nav aria-label="Wiki 目录">
   网站导航（{{ site.time | date: '%Y-%m-%d %H:%M' }}更新）
@@ -47,6 +49,54 @@
 
     {% comment %} 遍历每一条路径 {% endcomment %}
     {% for wiki_path in wiki_paths %}
+      {% comment %} 计算该目录下的文件项 {% endcomment %}
+      wiki_path: {{ wiki_path }}
+      {% assign files = '' | split: '' %}
+      {% for page_item in wiki_pages %}
+        {% comment %} 计算正在处理的页面的短路径（不含前缘和文件名） {% endcomment %}
+        {% assign page_path = page_item.path %}
+        {% assign page_path_len = page_path.size | minus: base_path_len | minus: page_item.name.size | minus: 1 %}
+        {% assign page_path = page_path | slice: base_path_len, page_path_len %}
+
+        {% if page_path == wiki_path %}
+          {% comment %} 正在处理的页面是正在处理的路径下的文件 {% endcomment %}
+          {% assign page_name = page_item.title %}  {% comment %} 默认名称取title {% endcomment %}
+          {% if page_name.size == 0 %}
+            {% comment %} 如果没有title，取不含扩展名的文件名 {% endcomment %}
+            {% assign page_name = page_item.name  %}
+            {% assign page_name_len = page_name.size | minus: page_item.ext.size %}
+            {% assign page_name = page_name | slice: 0, page_name_len  %}
+          {% else %}
+            {% comment %} 如果是文集中的一篇的话，取本集序号 + 空格 + 本集名 {% endcomment %}
+            {% assign name_parts = page_name | split: '(' %}
+            {% assign collection_name = name_parts | first %}
+            {% assign last_folder = wiki_path | split: '/' | last %}
+            {% if name_parts.size == 2 and collection_name == last_folder %}
+              {% assign left_parts = name_parts | last | split: ')' %}
+              {% assign episode_id = left_parts | first %}
+              {% assign episode_name = left_parts | last %}
+              {% if left_parts.size == 2 and episode_id.size > 0 %}
+                {% if episode_id == '目录' and episode_name.size == 0 %}
+                  {% comment %} 如果是文集的目录的话，就取“目录”两字 {% endcomment %}
+                  {% assign page_name = episode_id %}
+                {% elsif episode_name.size > 0 %}
+                  {% assign page_name = episode_id | append: ' ' | append: episode_name %}
+                {% endif %}
+              {% endif %}
+            {% endif %}
+          {% endif %}
+        {% endif %}
+
+        {% assign page_name_and_url = page_name | append: '|' | append: page_item.url %}
+        {% if page_name == '目录' %}
+          {% comment %} 目录要排在最前面 {% endcomment %}
+          {% assign files = files | unshift: page_name_and_url %}
+        {% else %}
+          {% assign files = files | push: page_name_and_url %}
+        {% endif %}
+      {% endfor %}
+      files: {{ files | inspect }}
+
       {% comment %} 将路径转化为目录数组 {% endcomment %}
       {% assign segments = wiki_path | split: '/' %}
       {% assign prev_dir_len = prev_segments.size %}
@@ -98,52 +148,7 @@
         {% endfor %}
       {% endif %}
 
-      {% comment %} 目录项已全部就绪，建立该目录下的文件项 {% endcomment %}
-      {% assign files = '' | split: '' %}
-      {% for page_item in wiki_pages %}
-        {% comment %} 计算正在处理的页面的短路径（不含前缘和文件名） {% endcomment %}
-        {% assign page_path_len = page_path.size | minus: base_path_len | minus: page_item.name.size | minus: 1 %}
-        {% assign page_path = page_item.path | slice: base_path_len, page_path_len %}
-
-        {% if page_path == wiki_path %}
-          {% comment %} 正在处理的页面是正在处理的路径下的文件 {% endcomment %}
-          {% assign page_name = page_item.title %}  {% comment %} 默认名称取title {% endcomment %}
-          {% if page_name.size == 0 %}
-            {% comment %} 如果没有title，取不含扩展名的文件名 {% endcomment %}
-            {% assign page_name = page_item.name  %}
-            {% assign page_name_len = page_name.size | minus: page_item.ext.size %}
-            {% assign page_name = page_name | slice: 0, page_name_len  %}
-          {% else %}
-            {% comment %} 如果是文集中的一篇的话，取本集序号 + 空格 + 本集名 {% endcomment %}
-            {% assign name_parts = page_name | split: '(' %}
-            {% assign collection_name = name_parts | first %}
-            {% assign last_folder = page_path | split: '/' | last %}
-            {% if name_parts.size == 2 and collection_name == last_folder %}
-              {% assign left_parts = name_parts | last | split: ')' %}
-              {% assign episode_id = left_parts | first %}
-              {% assign episode_name = left_parts | last %}
-              {% if left_parts.size == 2 and episode_id.size > 0 %}
-                {% if episode_id == '目录' and episode_name.size == 0 %}
-                  {% comment %} 如果是文集的目录的话，就取“目录”两字 {% endcomment %}
-                  {% assign page_name = episode_id %}
-                {% elsif episode_name.size > 0 %}
-                  {% assign page_name = episode_id | append: ' ' | append: episode_name %}
-                {% endif %}
-              {% endif %}
-            {% endif %}
-          {% endif %}
-        {% endif %}
-
-        {% assign page_name_and_url = page_name | append: '|' | append: page_item.url %}
-        {% if page_name == '目录' %}
-          {% comment %} 目录要排在最前面 {% endcomment %}
-          {% assign files = files | unshift: page_name_and_url %}
-        {% else %}
-          {% assign files = files | push: page_name_and_url %}
-        {% endif %}
-      {% endfor %}
-
-      {% comment %} 在目录树中添加文件 {% endcomment %}
+      {% comment %} 目录项已全部就绪，在目录树中添加文件 {% endcomment %}
       {% for page_name_and_url in files %}
         {% assign page_parts = page_name_and_url | split: '|' %}
         {% assign page_name = page_parts | first %}
