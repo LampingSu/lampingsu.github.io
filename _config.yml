@@ -148,7 +148,7 @@ inc_after_tail :
 inc_before_tools : 
 inc_after_tools : 
 
-inc_before_page_list : "wiki_explorer.html title='本站导航' show_site_time=true max_height='60vh'"
+inc_before_page_list : wiki_explorer.html title='本站导航' show_site_time=true max_height='60vh'
 inc_after_page_list :
 inc_before_post_list :
 inc_after_post_list :
