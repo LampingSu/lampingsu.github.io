@@ -231,11 +231,11 @@
     vertical-align: middle;
   }
 
-  /* Use display toggling (robust against global opacity overrides) */
-  nav[aria-label="Wiki 目录"] .folder-open { display: none; }
-  /* The `open` attribute is on the <details>, not on the <li>. Target details[open]. */
-  nav[aria-label="Wiki 目录"] .explorer-folder details[open] .folder-closed { display: none; }
-  nav[aria-label="Wiki 目录"] .explorer-folder details[open] .folder-open { display: inline-block; }
+  /* Use display toggling (robust against global opacity/position overrides). */
+  /* Make rules highly specific and use !important to defeat external overrides. */
+  nav[aria-label="Wiki 目录"] .explorer-folder > details > summary .folder-open { display: none !important; }
+  nav[aria-label="Wiki 目录"] .explorer-folder > details[open] > summary .folder-closed { display: none !important; }
+  nav[aria-label="Wiki 目录"] .explorer-folder > details[open] > summary .folder-open { display: inline-block !important; }
 
   nav[aria-label="Wiki 目录"] .file-count {
     font-size: 0.8em;
