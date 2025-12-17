@@ -173,8 +173,8 @@
 </nav>
 
 <style>
-  /* 基本树形样式 */
-  .explorer-tree {
+  /* Scoped styles targeted to this nav to avoid external interference */
+  nav[aria-label="Wiki 目录"] .explorer-tree {
     border: 1px solid #ddd;
     border-radius: 6px;
     background: white;
@@ -183,120 +183,101 @@
     {% if include.max_height %} max-height: {{ include.max_height }}; {% endif %}
     list-style: none;
     overflow-y: auto;
+    /* variables for easy tuning */
+    --smap-font-size: 1em;
+    --smap-icon-size: 1em;
+    --smap-gap: 0.25rem;
+    --smap-pad-v: 0.08rem;
+    --smap-pad-h: 0.32rem;
+    font-size: var(--smap-font-size);
   }
 
-  .explorer-folder {
-    margin: 0.06rem 0;
-  }
+  nav[aria-label="Wiki 目录"] .explorer-folder { margin: 0.04rem 0; }
+  nav[aria-label="Wiki 目录"] .explorer-folder details { margin: 0.02rem 0; }
 
-  .explorer-folder details {
-    margin: 0.04rem 0;
-  }
-
-  .explorer-folder summary {
+  nav[aria-label="Wiki 目录"] .explorer-folder > details > summary {
     cursor: pointer;
-    padding: 0.08rem 0.32rem;
+    padding: var(--smap-pad-v) var(--smap-pad-h);
     border-radius: 4px;
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: var(--smap-gap);
     font-weight: 500;
     line-height: 1;
     user-select: none;
     list-style: none;
+    font-size: inherit; /* same as tree font-size */
   }
+  nav[aria-label="Wiki 目录"] .explorer-folder > details > summary:hover { background: #f0f0f0; }
+  nav[aria-label="Wiki 目录"] .explorer-folder > details > summary::-webkit-details-marker { display: none; }
 
-  .explorer-folder summary:hover {
-    background: #f0f0f0;
-  }
-
-  .explorer-folder summary::-webkit-details-marker {
-    display: none;
-  }
-
-  /* 动态文件夹图标 */
-  .folder-icon {
-    position: relative;
-    width: 1em;
-    height: 1em;
+  /* Folder icon: inline flow, same sizing as file icons */
+  nav[aria-label="Wiki 目录"] .folder-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    line-height: 1;
+    width: var(--smap-icon-size);
+    height: var(--smap-icon-size);
+    flex-shrink: 0;
+    font-size: var(--smap-icon-size);
     vertical-align: middle;
   }
 
-  .folder-closed,
-  .folder-open {
+  nav[aria-label="Wiki 目录"] .folder-closed,
+  nav[aria-label="Wiki 目录"] .folder-open {
     display: inline-block;
-    transition: opacity 0.18s;
-    font-size: 1em;
+    font-size: var(--smap-icon-size);
     line-height: 1;
     vertical-align: middle;
   }
 
-  .folder-closed {
-    opacity: 1;
-  }
+  /* Use display toggling (robust against global opacity overrides) */
+  nav[aria-label="Wiki 目录"] .folder-open { display: none; }
+  nav[aria-label="Wiki 目录"] .explorer-folder[open] .folder-closed { display: none; }
+  nav[aria-label="Wiki 目录"] .explorer-folder[open] .folder-open { display: inline-block; }
 
-  .folder-open {
-    opacity: 0;
-  }
-
-  .explorer-folder details[open] .folder-closed {
-    opacity: 0;
-  }
-
-  .explorer-folder details[open] .folder-open {
-    opacity: 1;
-  }
-
-  .file-count {
-    font-size: 0.7em;
+  nav[aria-label="Wiki 目录"] .file-count {
+    font-size: 0.8em;
     color: #6a737d;
     margin-left: auto;
   }
-  
-  .folder-contents {
+
+  nav[aria-label="Wiki 目录"] .folder-contents {
     list-style: none;
     padding-left: 1.0rem;
-    margin: 0.06rem 0;
+    margin: 0.04rem 0;
     border-left: 1px solid #e6e8ea;
   }
 
-  /* 文件项样式与图标 */
-  .explorer-file {
-    margin: 0.06rem 0;
+  nav[aria-label="Wiki 目录"] .explorer-file { margin: 0.04rem 0; }
+
+  /* Ensure folder labels and file links share identical sizing and padding for aligned layout */
+  nav[aria-label="Wiki 目录"] .explorer-file a,
+  nav[aria-label="Wiki 目录"] .explorer-folder > details > summary {
+    font-size: var(--smap-font-size);
   }
 
-  .explorer-file a {
+  nav[aria-label="Wiki 目录"] .explorer-file a {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
-    padding: 0.08rem 0.32rem;
+    gap: var(--smap-gap);
+    padding: var(--smap-pad-v) var(--smap-pad-h);
     text-decoration: none;
     color: #24292e;
     border-radius: 3px;
-    font-size: 1em;
     line-height: 1;
     transition: all 0.1s;
   }
 
-  .explorer-file a:hover {
-    background: #0366d6;
-    color: white;
-  }
+  nav[aria-label="Wiki 目录"] .explorer-file a:hover { background: #0366d6; color: white; }
+  nav[aria-label="Wiki 目录"] .explorer-file.active a { background: #0366d6; color: yellow; font-weight: 500; }
 
-  .explorer-file.active a {
-    background: #0366d6;
-    color: yellow;
-    font-weight: 500;
-  }
-
-  .file-icon {
-    font-size: 1em;
-    width: 1em;
-    height: 1em;
+  /* Make file and folder icons identical in size and alignment */
+  nav[aria-label="Wiki 目录"] .file-icon,
+  nav[aria-label="Wiki 目录"] .folder-icon > * {
+    width: var(--smap-icon-size);
+    height: var(--smap-icon-size);
+    font-size: var(--smap-icon-size);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -304,21 +285,16 @@
     vertical-align: middle;
   }
 
-  .explorer-tree::-webkit-scrollbar {
-    width: 6px;
+  /* Labels as inline elements for predictable left alignment */
+  nav[aria-label="Wiki 目录"] .explorer-file a > *:not(.file-icon),
+  nav[aria-label="Wiki 目录"] .explorer-folder > details > summary > *:not(.folder-icon) {
+    display: inline-block;
+    vertical-align: middle;
   }
 
-  .explorer-tree::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 3px;
-  }
-
-  .explorer-tree::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 3px;
-  }
-
-  .explorer-tree::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
-  }
+  /* Scoped scrollbar styling */
+  nav[aria-label="Wiki 目录"] .explorer-tree::-webkit-scrollbar { width: 6px; }
+  nav[aria-label="Wiki 目录"] .explorer-tree::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+  nav[aria-label="Wiki 目录"] .explorer-tree::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+  nav[aria-label="Wiki 目录"] .explorer-tree::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
 </style>
