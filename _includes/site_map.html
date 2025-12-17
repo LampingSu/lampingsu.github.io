@@ -3,17 +3,17 @@
 - base_path: 仓库中用来存放 wiki 文档的目录（末尾带斜杠）。默认为 "wiki/"。
 {% endcomment %}
 {% assign base_path = site.wiki_folder | append: '/' %}
-{% assign base_path_len = base_path | size %}
+{% assign base_path_len = base_path.size %}
 
 {% comment %} 计算出当前显示的页面的短路径（不含前缘和文件名）备用 {% endcomment %}
-{% assign page_path_len = page.path.size | minus: base_path_len | minus: page.name.size | minus: 1 %}
-{% assign page_short_path = page.path | slice: base_path_len, page_path_len %}
+{% assign short_path_len = page.path.size | minus: base_path_len | minus: page.name.size | minus: 1 %}
+{% assign page_short_path = page.path | slice: base_path_len, short_path_len %}
 
 {% comment %} 构建两个数组，保存所有wiki页面，和短路径（不含前缘和文件名） {% endcomment %}
-{% assign wiki_pages = '' | split: '' %}
-{% assign wiki_paths = '' | split: '' %}
-{% assign pages = site.pages | sort: 'path' %}
-{% for page_item in pages %}
+{% assign wiki_page_list = '' | split: '' %}
+{% assign wiki_path_list = '' | split: '' %}
+{% assign site_pages = site.pages | sort: 'path' %}
+{% for page_item in site_pages %}
   {% assign page_path = page_item.path %}
 
   {% comment %} 跳过不以路径前缀开始的页面 {% endcomment %}
@@ -22,13 +22,13 @@
     {% continue %}
   {% endif %}
 
-  {% assign wiki_pages = wiki_pages | push: page_item %}
+  {% assign wiki_page_list = wiki_page_list | push: page_item %}
 
-  {% assign page_path_len = page_path.size | minus: base_path_len | minus: page_item.name.size | minus: 1 %}
-  {% assign page_path = page_item.path | slice: base_path_len, page_path_len %}
-  {% assign wiki_paths = wiki_paths | push: page_path %}
+  {% assign short_path_len = page_path.size | minus: base_path_len | minus: page_item.name.size | minus: 1 %}
+  {% assign page_path = page_path | slice: base_path_len, short_path_len %}
+  {% assign wiki_path_list = wiki_path_list | push: page_path %}
 {% endfor %}
-{% assign wiki_paths = wiki_paths | uniq %}
+{% assign wiki_path_list_uniq = wiki_path_list | uniq %}
 
 <nav aria-label="Wiki 目录">
   {% if include.title %}
@@ -40,8 +40,8 @@
   <ul class="explorer-tree">
     {%- comment -%}
     算法说明：
-    - 遍历 wiki_paths（已排序）
-    - 将每个 path 分割为 segments
+    - 遍历 wiki_path_list_uniq（已排序）
+    - 将其中的每个短路径分割为 segments 数组
     - 维护 prev_segments，按公共前缀决定关闭/打开哪些 <details>
     - 用 <details><summary>dirname</summary><ul> 嵌套目录结构
     - 每个文件输出为 <li class="file"><a href="...">title</a></li>
@@ -51,14 +51,13 @@
     {% assign prev_segments = '' | split: '/' %}
 
     {% comment %} 遍历每一条路径 {% endcomment %}
-    {% for wiki_path in wiki_paths %}
-      {% comment %} 计算该目录下的文件项 {% endcomment %}
-      {% assign files = '' | split: '' %}
-      {% for page_item in wiki_pages %}
-        {% comment %} 计算正在处理的页面的短路径（不含前缘和文件名） {% endcomment %}
-        {% assign page_path = page_item.path %}
-        {% assign page_path_len = page_path.size | minus: base_path_len | minus: page_item.name.size | minus: 1 %}
-        {% assign page_path = page_path | slice: base_path_len, page_path_len %}
+    {% for wiki_path in wiki_path_list_uniq %}
+      {% comment %} 计算该目录下的文件项的名称和URL {% endcomment %}
+      {% assign wiki_name_list = '' | split: '' %}
+      {% assign wiki_url_list = '' | split: '' %}
+      {% for page_path in wiki_path_list %}
+        {% assign index = forloop.index0 %}
+        {% assign page_item = wiki_page_list[index] %}
 
         {% if page_path == wiki_path %}
           {% comment %} 正在处理的页面是正在处理的路径下的文件 {% endcomment %}
@@ -86,12 +85,13 @@
             {% endif %}
           {% endif %}
         
-          {% assign page_name_and_url = page_name | append: '|' | append: page_item.url %}
           {% if page_name == '目录' %}
             {% comment %} 目录要排在最前面 {% endcomment %}
-            {% assign files = files | unshift: page_name_and_url %}
+            {% assign wiki_name_list = wiki_name_list | unshift: page_name %}
+            {% assign wiki_url_list = wiki_url_list | unshift: page_item.url %}
           {% else %}
-            {% assign files = files | push: page_name_and_url %}
+            {% assign wiki_name_list = wiki_name_list | push: page_name %}
+            {% assign wiki_url_list = wiki_url_list | push: page_item.url %}
           {% endif %}
         {% endif %}
       {% endfor %}
@@ -136,23 +136,22 @@
           {% assign idx = common_dir | plus: k %}
           {% assign dir_name = segments[idx] %}
           <li class="explorer-folder">
-            <details {% if page_short_path == wiki_path %}open{% endif %}>
+            <details {% if wiki_path == page_short_path %}open{% endif %}>
               <summary>
                 <span class="folder-icon">
                   <span class="folder-closed">📁</span>
                   <span class="folder-open">📂</span>
                 </span>
                 {{ dir_name }}
-                <span class="file-count">({{ files.size }})</span>
+                <span class="file-count">({{ wiki_name_list.size }})</span>
               </summary><ul class="folder-contents">
         {% endfor %}
       {% endif %}
 
       {% comment %} 目录项已全部就绪，在目录树中添加文件 {% endcomment %}
-      {% for page_name_and_url in files %}
-        {% assign page_parts = page_name_and_url | split: '|' %}
-        {% assign page_name = page_parts | first %}
-        {% assign page_url = page_parts | last %}
+      {% for page_name in wiki_name_list %}
+        {% assign index = forloop.index0 %}
+        {% assign page_url = wiki_url_list[index] %}
         <li class="explorer-file {% if page_url == page.url %}active{% endif %}">
           <a href="{{ page_url | relative_url }}">
             <span class="file-icon">📄</span>{{ page_name }}
