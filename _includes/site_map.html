@@ -31,7 +31,12 @@
 {% assign wiki_paths = wiki_paths | uniq %}
 
 <nav aria-label="Wiki 目录">
-  网站导航（{{ site.time | date: '%Y-%m-%d %H:%M' }}更新）
+  {% if include.title %}
+    {{ include.title }}
+    {% if include.show_site_time %}
+      ({{ site.time | date: '%Y-%m-%d %H:%M' }}更新)
+    {% endif %}
+  {% endif %}
   <ul class="explorer-tree">
     {%- comment -%}
     算法说明：
@@ -138,7 +143,7 @@
                   <span class="folder-open">📂</span>
                 </span>
                 {{ dir_name }}
-                <span class="item-count">({{ files.size }})</span>
+                <span class="file-count">({{ files.size }})</span>
               </summary><ul class="folder-contents">
         {% endfor %}
       {% endif %}
@@ -177,7 +182,7 @@
     background: white;
     padding-left: 0;
     margin: 0;
-    max-height: 60vh;
+    {% if include.max-height %} max-height: {{ include.max-height }}; {% endif %}
     list-style: none;
     overflow-y: auto;
   }
@@ -248,8 +253,8 @@
     opacity: 1;
   }
 
-  .item-count {
-    font-size: 0.8em;
+  .file-count {
+    font-size: 0.7em;
     color: #6a737d;
     margin-left: auto;
   }
