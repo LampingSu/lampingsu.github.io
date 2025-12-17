@@ -49,10 +49,9 @@
 
     {% comment %} 上一路径的数组形式，初始化为空数组 {% endcomment %}
     {% assign prev_segments = '' | split: '/' %}
-
     {% comment %} 遍历每一条路径 {% endcomment %}
     {% for wiki_path in wiki_path_list_uniq %}
-      {% comment %} 计算该目录下的文件项的名称和URL {% endcomment %}
+      {% comment %} 计算该路径下的文件项的名称和URL {% endcomment %}
       {% assign wiki_name_list = '' | split: '' %}
       {% assign wiki_url_list = '' | split: '' %}
       {% for page_path in wiki_path_list %}

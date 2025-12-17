@@ -1,113 +1,207 @@
-<!-- 可折叠的树形导航 -->
-网站导航
-<!-- 构建树形结构 -->
-<ul class="explorer-tree">
-  {% assign all_wiki_pages = site.pages | where_exp: "page", "page.path contains 'wiki/'" | sort: "path" %}
-  {% assign folders = "" | split: "" %}
+{% comment %}
+配置：
+- base_path: 仓库中用来存放 wiki 文档的目录（末尾带斜杠）。默认为 "wiki/"。
+{% endcomment %}
+{% assign base_path = site.wiki_folder | append: '/' %}
+{% assign base_path_len = base_path.size %}
 
-  <!-- 收集所有文件夹 -->
-  {% for doc in all_wiki_pages %}
-  {% assign path_parts = doc.path | split: "/" %}
-  {% if path_parts.size > 2 %}
-  {% assign folder = path_parts[1] %}
-  {% unless folders contains folder %}
-  {% assign folders = folders | push: folder %}
-  {% endunless %}
+{% comment %} 计算出当前显示的页面的短路径（不含前缘和文件名）备用 {% endcomment %}
+{% assign short_path_len = page.path.size | minus: base_path_len | minus: page.name.size | minus: 1 %}
+{% assign page_short_path = page.path | slice: base_path_len, short_path_len %}
+
+{% comment %} 构建两个数组，保存所有wiki页面，和短路径（不含前缘和文件名） {% endcomment %}
+{% assign wiki_page_list = '' | split: '' %}
+{% assign wiki_path_list = '' | split: '' %}
+{% assign site_pages = site.pages | sort: 'path' %}
+{% for page_item in site_pages %}
+  {% assign page_path = page_item.path %}
+
+  {% comment %} 跳过不以路径前缀开始的页面 {% endcomment %}
+  {% assign path_prefix = page_path | slice: 0, base_path_len %}
+  {% if path_prefix != base_path %}
+    {% continue %}
   {% endif %}
-  {% endfor %}
 
-  {% for folder in folders %}
-  {% assign folder_pages = all_wiki_pages | where_exp: "page", "page.path contains folder" %}
+  {% assign wiki_page_list = wiki_page_list | push: page_item %}
 
-  <!-- 手动分离目录文件和其他文件 -->
-  {% assign toc_pages = "" | split: "" %}
-  {% assign other_pages = "" | split: "" %}
+  {% assign short_path_len = page_path.size | minus: base_path_len | minus: page_item.name.size | minus: 1 %}
+  {% assign page_path = page_path | slice: base_path_len, short_path_len %}
+  {% assign wiki_path_list = wiki_path_list | push: page_path %}
+{% endfor %}
+{% assign wiki_path_list_uniq = wiki_path_list | uniq %}
 
-  {% for doc in folder_pages %}
-  {% if doc.path contains '_目录' %}
-  {% assign toc_pages = toc_pages | push: doc %}
-  {% else %}
-  {% assign other_pages = other_pages | push: doc %}
+<nav aria-label="Wiki 目录">
+  {% if include.title %}
+    {{ include.title }}
+    {% if include.show_site_time %}
+      ({{ site.time | date: '%Y-%m-%d %H:%M' }}更新)
+    {% endif %}
   {% endif %}
-  {% endfor %}
+  <ul class="explorer-tree">
+    {%- comment -%}
+    算法说明：
+    - 遍历 wiki_path_list_uniq（已排序）
+    - 将其中的每个短路径分割为 segments 数组
+    - 维护 prev_segments，按公共前缀决定关闭/打开哪些 <details>
+    - 用 <details><summary>dirname</summary><ul> 嵌套目录结构
+    - 每个文件输出为 <li class="file"><a href="...">title</a></li>
+    {%- endcomment -%}
 
-  <!-- 排序其他页面 -->
-  {% assign sorted_other_pages = other_pages | sort: "title" %}
-  {% assign sorted_pages = toc_pages | concat: sorted_other_pages %}
+    {% comment %} 上一路径的数组形式，初始化为空数组 {% endcomment %}
+    {% assign prev_segments = '' | split: '/' %}
+    {% comment %} 遍历每一条路径 {% endcomment %}
+    {% for wiki_path in wiki_path_list_uniq %}
+      {% comment %} 计算该路径下的文件项的名称和URL {% endcomment %}
+      {% assign wiki_name_list = '' | split: '' %}
+      {% assign wiki_url_list = '' | split: '' %}
+      {% for page_path in wiki_path_list %}
+        {% assign index = forloop.index0 %}
+        {% assign page_item = wiki_page_list[index] %}
 
-  <li class="explorer-folder">
-    <details {% if page.path contains folder %}open{% endif %}>
-      <summary>
-        <span class="folder-icon">
-          <span class="folder-closed">📁</span>
-          <span class="folder-open">📂</span>
-        </span>
-        {{ folder }}
-        <span class="item-count">({{ folder_pages.size }})</span>
-      </summary>
+        {% if page_path == wiki_path %}
+          {% comment %} 正在处理的页面是正在处理的路径下的文件 {% endcomment %}
+          {% assign page_name = page_item.title %}  {% comment %} 默认名称取title {% endcomment %}
+          {% if page_name.size == 0 %}
+            {% comment %} 如果没有title，取不含扩展名的文件名 {% endcomment %}
+            {% assign page_name = page_item.name  %}
+            {% assign page_name_len = page_name.size | minus: page_item.ext.size %}
+            {% assign page_name = page_name | slice: 0, page_name_len  %}
+          {% else %}
+            {% comment %} 如果是文集中的一篇的话，取本集序号 + 空格 + 本集名 {% endcomment %}
+            {% assign name_parts = page_name | split: '(' %}
+            {% assign collection_name = name_parts | first %}
+            {% assign last_folder = wiki_path | split: '/' | last %}
+            {% if name_parts.size == 2 and collection_name == last_folder %}
+              {% assign left_parts = name_parts | last | split: ')' %}
+              {% assign episode_id = left_parts | first %}
+              {% assign episode_name = left_parts | last %}
+              {% if episode_id == '目录' %}
+                {% comment %} 如果是文集的目录的话，就取“目录”两字 {% endcomment %}
+                {% assign page_name = episode_id %}
+              {% elsif left_parts.size == 2 and episode_id.size > 0 and episode_name.size > 0 %}
+                {% assign page_name = episode_id | append: ' ' | append: episode_name %}
+              {% endif %}
+            {% endif %}
+          {% endif %}
+        
+          {% if page_name == '目录' %}
+            {% comment %} 目录要排在最前面 {% endcomment %}
+            {% assign wiki_name_list = wiki_name_list | unshift: page_name %}
+            {% assign wiki_url_list = wiki_url_list | unshift: page_item.url %}
+          {% else %}
+            {% assign wiki_name_list = wiki_name_list | push: page_name %}
+            {% assign wiki_url_list = wiki_url_list | push: page_item.url %}
+          {% endif %}
+        {% endif %}
+      {% endfor %}
 
-      <ul class="folder-contents">
-        {% for doc in sorted_pages %}
-        {% assign doc_title = doc.title %}
-        {% assign is_toc = false %}
-        {% assign title_parts = doc.title | split: "(" %}
-        {% if title_parts.size == 2 %}
-        {% assign collection_name = title_parts | first %}
-        {% if collection_name == folder %}
-        {% assign title_rest = title_parts | last %}
-        {% assign rest_parts = title_rest | split: ")" %}
-        {% assign episode_id = rest_parts | first %}
-        {% assign episode_name = rest_parts | last %}
-        {% if rest_parts.size == 2 %}
-        {% assign doc_title = episode_id | append: ' ' | append: episode_name %}
-        {% elsif rest_parts.size == 1 %}
-        {% if episode_id == '目录' %}
-        {% assign doc_title = episode_id %}
-        {% assign is_toc = true %}
-        {% endif %}
-        {% endif %}
-        {% endif %}
-        {% endif %}
-        <li class="explorer-file {% if doc.url == page.url %}active{% endif %}">
-          <a href="{{ doc.url }}">
-            <span class="file-icon">{% if is_toc %}📋{% else %}📄{% endif %}</span>{{ doc_title }}
+      {% comment %} 将路径转化为目录数组 {% endcomment %}
+      {% assign segments = wiki_path | split: '/' %}
+      {% assign prev_dir_len = prev_segments.size %}
+      {% assign curr_dir_len = segments.size %}
+
+      {% comment %} 当前路径与上一路径共同的目录级数，不可能超过这两个路径的目录级数的最小值 {% endcomment %}
+      {% if prev_dir_len < curr_dir_len %} 
+        {% assign limit = prev_dir_len %} 
+      {% else %} 
+        {% assign limit = curr_dir_len %} 
+      {% endif %} 
+      
+      {% comment %} 计算当前路径与上一路径有多少级共同的目录 {% endcomment %}
+      {% assign common_dir=0 %} 
+      {% if limit > 0 %}
+        {% for i in (0..limit-1) %}
+          {% assign a = prev_segments[i] %}
+          {% assign b = segments[i] %}
+          {% if a != b %}
+            {% break %}
+          {% endif %}
+          {% assign common_dir = common_dir | plus: 1 %}
+        {% endfor %}
+      {% endif %}
+
+      {% comment %} 闭合当前路径与上一路径尾部不同的目录层级 {% endcomment %}
+      {% assign close_count = prev_dir_len | minus: common_dir %}
+      {% if close_count > 0 %}
+        {% for _ in (1..close_count) %}
+          </ul></details></li>
+        {% endfor %}
+      {% endif %}
+
+      {% comment %} 建立与上一路径尾部不同的目录层级 {% endcomment %}
+      {% assign open_count = curr_dir_len | minus: common_dir %}
+      {% if open_count > 0 %}
+        {% for k in (0..open_count-1) %}
+          {% assign idx = common_dir | plus: k %}
+          {% assign dir_name = segments[idx] %}
+          <li class="explorer-folder">
+            <details {% if wiki_path == page_short_path %}open{% endif %}>
+              <summary>
+                <span class="folder-icon">
+                  <span class="folder-closed">📁</span>
+                  <span class="folder-open">📂</span>
+                </span>
+                {{ dir_name }}
+                <span class="file-count">({{ wiki_name_list.size }})</span>
+              </summary><ul class="folder-contents">
+        {% endfor %}
+      {% endif %}
+
+      {% comment %} 目录项已全部就绪，在目录树中添加文件 {% endcomment %}
+      {% for page_name in wiki_name_list %}
+        {% assign index = forloop.index0 %}
+        {% assign page_url = wiki_url_list[index] %}
+        <li class="explorer-file {% if page_url == page.url %}active{% endif %}">
+          <a href="{{ page_url | relative_url }}">
+            <span class="file-icon">📄</span>{{ page_name }}
           </a>
         </li>
-        {% endfor %}
-      </ul>
-    </details>
-  </li>
-  {% endfor %}
-</ul>
+      {% endfor %}
+
+      {% comment %} 当前路径处理完毕 {% endcomment %}
+      {% assign prev_segments = segments %}
+    {% endfor %}
+
+    {% comment %} 闭合上一页面的路径中的所有目录层级 {% endcomment %}
+    {% assign final_prev_dir_len = prev_segments.size %}
+    {% if final_prev_dir_len > 0 %}
+      {% for _ in (1..final_prev_dir_len) %}
+        </ul></details></li>
+      {% endfor %}
+    {% endif %}
+  </ul>
+</nav>
 
 <style>
+  /* 基本树形样式 */
   .explorer-tree {
     border: 1px solid #ddd;
     border-radius: 6px;
     background: white;
-    list-style: none;
-    padding: 0.5rem;
+    padding-left: 0;
     margin: 0;
-    max-height: 60vh;
+    {% if include.max_height %} max-height: {{ include.max_height }}; {% endif %}
+    list-style: none;
     overflow-y: auto;
   }
 
   .explorer-folder {
-    margin: 0.3rem 0;
+    margin: 0.06rem 0;
   }
 
   .explorer-folder details {
-    margin: 0.2rem 0;
+    margin: 0.04rem 0;
   }
 
   .explorer-folder summary {
     cursor: pointer;
-    padding: 0.4rem 0.6rem;
+    padding: 0.08rem 0.32rem;
     border-radius: 4px;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.25rem;
     font-weight: 500;
+    line-height: 1;
     user-select: none;
     list-style: none;
   }
@@ -123,20 +217,22 @@
   /* 动态文件夹图标 */
   .folder-icon {
     position: relative;
-    width: 1.2em;
-    height: 1.2em;
-    display: flex;
+    width: 1em;
+    height: 1em;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
+    line-height: 1;
+    vertical-align: middle;
   }
 
   .folder-closed,
   .folder-open {
-    position: absolute;
-    top: 0;
-    left: 0;
-    transition: opacity 0.2s;
-    font-size: 1.1em;
+    display: inline-block;
+    transition: opacity 0.18s;
+    font-size: 1em;
+    line-height: 1;
+    vertical-align: middle;
   }
 
   .folder-closed {
@@ -155,32 +251,34 @@
     opacity: 1;
   }
 
-  .item-count {
-    font-size: 0.8em;
+  .file-count {
+    font-size: 0.7em;
     color: #6a737d;
     margin-left: auto;
   }
-
+  
   .folder-contents {
     list-style: none;
-    padding-left: 1.5rem;
-    margin: 0.3rem 0;
-    border-left: 2px solid #e1e4e8;
+    padding-left: 1.0rem;
+    margin: 0.06rem 0;
+    border-left: 1px solid #e6e8ea;
   }
 
+  /* 文件项样式与图标 */
   .explorer-file {
-    margin: 0.1rem 0;
+    margin: 0.06rem 0;
   }
 
   .explorer-file a {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.3rem 0.6rem;
+    gap: 0.25rem;
+    padding: 0.08rem 0.32rem;
     text-decoration: none;
     color: #24292e;
     border-radius: 3px;
-    font-size: 0.85em;
+    font-size: 1em;
+    line-height: 1;
     transition: all 0.1s;
   }
 
@@ -191,22 +289,19 @@
 
   .explorer-file.active a {
     background: #0366d6;
-    color: white;
+    color: yellow;
     font-weight: 500;
   }
 
   .file-icon {
-    font-size: 0.9em;
+    font-size: 1em;
+    width: 1em;
+    height: 1em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
-  }
-
-  .explorer-file a[href*="_目录"] {
-    font-weight: 600;
-    background: #f0f0f0;
-  }
-
-  .explorer-file a[href*="_目录"]:hover {
-    background: #0366d6;
+    vertical-align: middle;
   }
 
   .explorer-tree::-webkit-scrollbar {
