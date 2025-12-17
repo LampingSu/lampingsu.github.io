@@ -34,7 +34,7 @@
   {% if include.title %}
     {{ include.title }}
     {% if include.show_site_time %}
-      ({{ site.time | date: '%Y-%m-%d %H:%M' }}更新)
+      ({{ site.time | date: '%y/%m/%d %H:%M' }})
     {% endif %}
   {% endif %}
   <ul class="explorer-tree">
@@ -233,8 +233,9 @@
 
   /* Use display toggling (robust against global opacity overrides) */
   nav[aria-label="Wiki 目录"] .folder-open { display: none; }
-  nav[aria-label="Wiki 目录"] .explorer-folder[open] .folder-closed { display: none; }
-  nav[aria-label="Wiki 目录"] .explorer-folder[open] .folder-open { display: inline-block; }
+  /* The `open` attribute is on the <details>, not on the <li>. Target details[open]. */
+  nav[aria-label="Wiki 目录"] .explorer-folder details[open] .folder-closed { display: none; }
+  nav[aria-label="Wiki 目录"] .explorer-folder details[open] .folder-open { display: inline-block; }
 
   nav[aria-label="Wiki 目录"] .file-count {
     font-size: 0.8em;
