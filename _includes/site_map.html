@@ -8,6 +8,10 @@
 {% comment %} 取得一个几乎不会重复的id，以避免样式重复 {% endcomment %}
 {% assign timestamp = site.time | date: "%Y%m%d%H%M%S" %}
 {% assign random_number = (0..9) | sample: 8 | join: ''  %}
+1:{{ (0..9) | sample }}<br>
+2:{{ (0..9) | sample }}<br>
+3:{{ (0..9) | sample }}<br>
+4:{{ site.pages | sample | inspect }}
 {% assign unique_id = 'id_' | append: timestamp | append: "_"  | append: random_number %}
 {% if include.include_id %}
   {% assign unique_id = unique_id |  append: '_' | append: include.include_id %}
