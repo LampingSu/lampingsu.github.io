@@ -9,7 +9,9 @@
 {% assign timestamp = site.time | date: "%Y%m%d%H%M%S" %}
 {% assign unique_id = include.include_id | default: page.id %}
 {% assign unique_id = 'id_' | append: unique_id | append: "_" | append: timestamp | append: "_"  | append: forloop.index %}
+1:{{ unique_id }}<br>
 {% assign unique_id = unique_id | slugify %}
+2:{{ unique_id }}<br>
 
 {% comment %} 计算出当前显示的页面的短路径（不含前缘和文件名）备用 {% endcomment %}
 {% assign short_path_len = page.path.size | minus: base_path_len | minus: page.name.size | minus: 1 %}
