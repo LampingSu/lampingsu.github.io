@@ -9,14 +9,13 @@
 {% assign timestamp = site.time | date: "%Y%m%d%H%M%S" %}
 {% assign random_number = '0,1,2,3,4,5,6,7,8,9' | split ',' | sample %}
 1:{{ random_number | inspect }}
-2:{{ '0,1,2,3,4,5,6,7,8,9' | split ',' | sample: 8 | inspect }}
 {% assign random_number = "random_number | join: ''" %}
 3:{{ random_number | inspect }}
-{% assign unique_id = 'id_' | append: timestamp | append: "_"  | append: random_number %}
+{% assign unique_id = 'id_' | append: timestamp | append: '_'  | append: random_number %}
 {% if include.include_id %}
-  {% assign unique_id = unique_id |  append: '_' | append: include.include_id %}
+  {% assign unique_id = unique_id | append: '_' | append: include.include_id %}
 {% elsif page.id %}
-  {% assign unique_id = unique_id |  append: '_' | append: page.id %}
+  {% assign unique_id = unique_id | append: '_' | append: page.id %}
 {% endif %}
 {% assign unique_id = unique_id | slugify %}
 {{ unique_id }}
