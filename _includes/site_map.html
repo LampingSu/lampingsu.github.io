@@ -5,6 +5,12 @@
 {% assign base_path = site.wiki_folder | append: '/' %}
 {% assign base_path_len = base_path.size %}
 
+{% comment %} 取得一个几乎不会重复的id，以避免样式重复 {% endcomment %}
+{% assign timestamp = site.time | date: "%Y%m%d%H%M%S" %}
+{% assign unique_id = include.include_id | default: page.id %}
+{% assign unique_id = 'id_' | append: unique_id | append: "_" | append: timestamp | append: "_"  | append: forloop.index %}
+{% assign unique_id = unique_id | slugify %}
+
 {% comment %} 计算出当前显示的页面的短路径（不含前缘和文件名）备用 {% endcomment %}
 {% assign short_path_len = page.path.size | minus: base_path_len | minus: page.name.size | minus: 1 %}
 {% assign page_short_path = page.path | slice: base_path_len, short_path_len %}
@@ -30,7 +36,7 @@
 {% endfor %}
 {% assign wiki_path_list_uniq = wiki_path_list | uniq %}
 
-<nav aria-label="Wiki 目录">
+<nav aria-label="{{ unique_id }}">
   {% if include.title %}
     {{ include.title }}
     {% if include.show_site_time %}
@@ -174,7 +180,7 @@
 
 <style>
   /* Scoped styles targeted to this nav to avoid external interference */
-  nav[aria-label="Wiki 目录"] .explorer-tree {
+  nav[aria-label="{{ unique_id }}"] .explorer-tree {
     border: 1px solid #ddd;
     border-radius: 6px;
     background: white;
@@ -192,10 +198,10 @@
     font-size: var(--smap-font-size);
   }
 
-  nav[aria-label="Wiki 目录"] .explorer-folder { margin: 0.04rem 0; }
-  nav[aria-label="Wiki 目录"] .explorer-folder details { margin: 0.02rem 0; }
+  nav[aria-label="{{ unique_id }}"] .explorer-folder { margin: 0.04rem 0; }
+  nav[aria-label="{{ unique_id }}"] .explorer-folder details { margin: 0.02rem 0; }
 
-  nav[aria-label="Wiki 目录"] .explorer-folder > details > summary {
+  nav[aria-label="{{ unique_id }}"] .explorer-folder > details > summary {
     cursor: pointer;
     padding: var(--smap-pad-v) var(--smap-pad-h);
     border-radius: 4px;
@@ -208,11 +214,11 @@
     list-style: none;
     font-size: inherit; /* same as tree font-size */
   }
-  nav[aria-label="Wiki 目录"] .explorer-folder > details > summary:hover { background: #f0f0f0; }
-  nav[aria-label="Wiki 目录"] .explorer-folder > details > summary::-webkit-details-marker { display: none; }
+  nav[aria-label="{{ unique_id }}"] .explorer-folder > details > summary:hover { background: #f0f0f0; }
+  nav[aria-label="{{ unique_id }}"] .explorer-folder > details > summary::-webkit-details-marker { display: none; }
 
   /* Folder icon: inline flow, same sizing as file icons */
-  nav[aria-label="Wiki 目录"] .folder-icon {
+  nav[aria-label="{{ unique_id }}"] .folder-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -223,8 +229,8 @@
     vertical-align: middle;
   }
 
-  nav[aria-label="Wiki 目录"] .folder-closed,
-  nav[aria-label="Wiki 目录"] .folder-open {
+  nav[aria-label="{{ unique_id }}"] .folder-closed,
+  nav[aria-label="{{ unique_id }}"] .folder-open {
     display: inline-block;
     font-size: var(--smap-icon-size);
     line-height: 1;
@@ -233,32 +239,32 @@
 
   /* Use display toggling (robust against global opacity/position overrides). */
   /* Make rules highly specific and use !important to defeat external overrides. */
-  nav[aria-label="Wiki 目录"] .explorer-folder > details > summary .folder-open { display: none !important; }
-  nav[aria-label="Wiki 目录"] .explorer-folder > details[open] > summary .folder-closed { display: none !important; }
-  nav[aria-label="Wiki 目录"] .explorer-folder > details[open] > summary .folder-open { display: inline-block !important; }
+  nav[aria-label="{{ unique_id }}"] .explorer-folder > details > summary .folder-open { display: none !important; }
+  nav[aria-label="{{ unique_id }}"] .explorer-folder > details[open] > summary .folder-closed { display: none !important; }
+  nav[aria-label="{{ unique_id }}"] .explorer-folder > details[open] > summary .folder-open { display: inline-block !important; }
 
-  nav[aria-label="Wiki 目录"] .file-count {
+  nav[aria-label="{{ unique_id }}"] .file-count {
     font-size: 0.8em;
     color: #6a737d;
     margin-left: auto;
   }
 
-  nav[aria-label="Wiki 目录"] .folder-contents {
+  nav[aria-label="{{ unique_id }}"] .folder-contents {
     list-style: none;
     padding-left: 1.0rem;
     margin: 0.04rem 0;
     border-left: 1px solid #e6e8ea;
   }
 
-  nav[aria-label="Wiki 目录"] .explorer-file { margin: 0.04rem 0; }
+  nav[aria-label="{{ unique_id }}"] .explorer-file { margin: 0.04rem 0; }
 
   /* Ensure folder labels and file links share identical sizing and padding for aligned layout */
-  nav[aria-label="Wiki 目录"] .explorer-file a,
-  nav[aria-label="Wiki 目录"] .explorer-folder > details > summary {
+  nav[aria-label="{{ unique_id }}"] .explorer-file a,
+  nav[aria-label="{{ unique_id }}"] .explorer-folder > details > summary {
     font-size: var(--smap-font-size);
   }
 
-  nav[aria-label="Wiki 目录"] .explorer-file a {
+  nav[aria-label="{{ unique_id }}"] .explorer-file a {
     display: flex;
     align-items: center;
     gap: var(--smap-gap);
@@ -270,12 +276,12 @@
     transition: all 0.1s;
   }
 
-  nav[aria-label="Wiki 目录"] .explorer-file a:hover { background: #0366d6; color: white; }
-  nav[aria-label="Wiki 目录"] .explorer-file.active a { background: #0366d6; color: yellow; font-weight: 500; }
+  nav[aria-label="{{ unique_id }}"] .explorer-file a:hover { background: #0366d6; color: white; }
+  nav[aria-label="{{ unique_id }}"] .explorer-file.active a { background: #0366d6; color: yellow; font-weight: 500; }
 
   /* Make file and folder icons identical in size and alignment */
-  nav[aria-label="Wiki 目录"] .file-icon,
-  nav[aria-label="Wiki 目录"] .folder-icon > * {
+  nav[aria-label="{{ unique_id }}"] .file-icon,
+  nav[aria-label="{{ unique_id }}"] .folder-icon > * {
     width: var(--smap-icon-size);
     height: var(--smap-icon-size);
     font-size: var(--smap-icon-size);
@@ -287,15 +293,15 @@
   }
 
   /* Labels as inline elements for predictable left alignment */
-  nav[aria-label="Wiki 目录"] .explorer-file a > *:not(.file-icon),
-  nav[aria-label="Wiki 目录"] .explorer-folder > details > summary > *:not(.folder-icon) {
+  nav[aria-label="{{ unique_id }}"] .explorer-file a > *:not(.file-icon),
+  nav[aria-label="{{ unique_id }}"] .explorer-folder > details > summary > *:not(.folder-icon) {
     display: inline-block;
     vertical-align: middle;
   }
 
   /* Scoped scrollbar styling */
-  nav[aria-label="Wiki 目录"] .explorer-tree::-webkit-scrollbar { width: 6px; }
-  nav[aria-label="Wiki 目录"] .explorer-tree::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
-  nav[aria-label="Wiki 目录"] .explorer-tree::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
-  nav[aria-label="Wiki 目录"] .explorer-tree::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+  nav[aria-label="{{ unique_id }}"] .explorer-tree::-webkit-scrollbar { width: 6px; }
+  nav[aria-label="{{ unique_id }}"] .explorer-tree::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+  nav[aria-label="{{ unique_id }}"] .explorer-tree::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+  nav[aria-label="{{ unique_id }}"] .explorer-tree::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
 </style>
