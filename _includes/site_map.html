@@ -7,11 +7,15 @@
 
 {% comment %} 取得一个几乎不会重复的id，以避免样式重复 {% endcomment %}
 {% assign timestamp = site.time | date: "%Y%m%d%H%M%S" %}
-{% assign unique_id = include.include_id | default: page.id %}
-{% assign unique_id = 'id_' | append: unique_id | append: "_" | append: timestamp | append: "_"  | append: forloop.index %}
-1:{{ unique_id }}<br>
+{% assign random_number = (0..9) | sample: 8 | join: ''  %}
+{% assign unique_id = 'id_' | append: timestamp | append: "_"  | append: random_number %}
+{% if include.include_id %}
+  {% assign unique_id = unique_id |  append: '_' | append: include.include_id %}
+{% elsif page.id %}
+  {% assign unique_id = unique_id |  append: '_' | append: page.id %}
+{% endif %}
 {% assign unique_id = unique_id | slugify %}
-2:{{ unique_id }}<br>
+{{ unique_id }}
 
 {% comment %} 计算出当前显示的页面的短路径（不含前缘和文件名）备用 {% endcomment %}
 {% assign short_path_len = page.path.size | minus: base_path_len | minus: page.name.size | minus: 1 %}
