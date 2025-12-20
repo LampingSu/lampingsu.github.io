@@ -1,6 +1,6 @@
 ---
 title: "测试页"
-published: true
+published: false
 ---
 # 一级标题
 ## 二级标题
@@ -16,5 +16,3 @@ cde = good
 ```
 This is a Chinese website. If your browser does not support Chinese, or if you do not understand Chinese, this website is not suitable for you.  
 这是一个中文网站。如果您的浏览器不支持中文，或您不懂中文，那这个网站不适合您。
-
-{% include site_map.html title='Wiki导航' %}
