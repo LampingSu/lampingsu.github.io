@@ -1,8 +1,18 @@
 {% comment %}
-配置：
-- base_path: 仓库中用来存放 wiki 文档的目录（末尾带斜杠）。默认为 "wiki/"。
+作为可供其它网页引用(include)的网页，以类似文件管理器的树形结构显示指定路径以下所有页面(page)。
+输入参数：
+- include.base_path: 指定的路径，本网页显示该路径及其下各级文件夹下的所有页面(page)。
+    如未指定，取 site.wiki_folder (即 _config.yml 中 wiki_folder 指定的路径)。
+- include.title: 指定显示在树形结构上方的标题文字。如不指定，则不显示标题文字，也不显示网站更新时间。
+- include.show_site_time: 如果设定为 true，且指定了 include.title，在标题文字后显示网站更新时间。
+- include.max_height: 如果指定且格式正确，则设置树形结构的最大行高(例如：max-height: 60vh;)。
+- include.include_id: 引用模块指定的id，用于区分不同的引用(include)，以避免css样式冲突。不指定通常也不会有问题。
 {% endcomment %}
-{% assign base_path = site.wiki_folder | append: '/' %}
+{% assign base_path = include.base_path | default: site.wiki_folder %}
+{% assign last_char = base_path | slice: -1, 1 %}
+{% if last_char != '/' %}
+  {% assign base_path = base_path | append: '/' %}
+{% endif %}
 {% assign base_path_len = base_path.size %}
 
 {% comment %} 取得一个几乎不会重复的id，以避免样式重复 {% endcomment %}
