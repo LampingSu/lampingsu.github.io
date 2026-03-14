@@ -1,6 +1,6 @@
 ---
 title: "测试页"
-published: false
+published: true
 ---
 # 一级标题
 ## 二级标题
